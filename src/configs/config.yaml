@@ -1,0 +1,4 @@
+defaults:
+  - dataset: dummy 
+
+experiment_name: "waveform_analysis"

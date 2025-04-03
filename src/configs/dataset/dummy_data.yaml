@@ -1,0 +1,4 @@
+name: "DummyDataset"
+component_orders: null  #["ZNE", "ENZ", "NZE"]
+dimension_orders: null  #["NWC", "NCW", "CWN"]
+sampling_rates: null
