@@ -1,5 +1,0 @@
-[2025-04-09 14:17:47,049][__main__][INFO] - Running experiment: waveform_analysis
-[2025-04-09 14:17:47,049][__main__][INFO] - Using dataset: DummyDataset
-[2025-04-09 14:17:47,099][seisbench][WARNING] - Output component order not specified, defaulting to 'ZNE'.
-[2025-04-09 14:17:47,103][__main__][INFO] - No component orders provided. Skipping this step.
-[2025-04-09 14:17:47,103][__main__][INFO] - Applying dimension order: ['NWC']

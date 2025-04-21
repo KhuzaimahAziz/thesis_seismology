@@ -1,0 +1,3 @@
+name: PhaseNet
+phases: "PSN"
+norm: "peak"

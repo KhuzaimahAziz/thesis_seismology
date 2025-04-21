@@ -1,6 +1,0 @@
-dataset:
-  name: DummyDataset
-  component_orders: null
-  dimension_orders: null
-  sampling_rates: 100
-experiment_name: waveform_analysis

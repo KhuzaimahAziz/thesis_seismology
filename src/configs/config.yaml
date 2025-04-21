@@ -1,10 +1,25 @@
-
 defaults:
-  - dataset: dummy_data 
   - _self_
+  - model: model_config
   - augmentations: all_aug
 
+experiment_name: "seismic_training"
 
-experiment_name: "waveform_analysis"
-train_augmentations: Null
-val_augmentations: Null
+train_augmentations: false
+val_augmentations: false
+
+dataset:
+  name: null
+  component_orders: null  #["ZNE", "ENZ", "NZE"]
+  dimension_orders: null  #["NWC", "NCW", "CWN"]
+  sampling_rates: null
+
+training:
+  batch_size: 256
+  num_workers: 4
+  epochs: 5
+  optimizer:
+    name: "Adam"
+    params:
+      lr: 0.01
+      weight_decay: 0.0001
