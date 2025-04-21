@@ -1,4 +1,10 @@
+
 defaults:
-  - dataset: dummy 
+  - dataset: dummy_data 
+  - _self_
+  - augmentations: all_aug
+
 
 experiment_name: "waveform_analysis"
+train_augmentations: Null
+val_augmentations: Null

@@ -1,0 +1,4 @@
+random_window:
+  _target_: seisbench.generate.RandomWindow
+  windowlen: 2000
+  strategy: "random"

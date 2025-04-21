@@ -1,0 +1,15 @@
+[2025-04-09 14:38:45,032][__main__][INFO] - Running experiment: waveform_analysis
+[2025-04-09 14:38:45,033][__main__][INFO] - Using dataset: DummyDataset
+[2025-04-09 14:38:45,044][seisbench][WARNING] - Output component order not specified, defaulting to 'ZNE'.
+[2025-04-09 14:38:45,045][__main__][INFO] - Applying component order: NZE
+[2025-04-09 14:38:45,050][__main__][INFO] - Component Order: NZE | Sample Data:
+[[-100.  -99.  -98.  -99.  -98.]
+ [  34.   47.   51.   58.   72.]
+ [ 645.  636.  625.  619.  612.]]
+[2025-04-09 14:38:45,050][__main__][INFO] - No dimension orders provided. Skipping this step.
+[2025-04-09 14:38:45,051][__main__][INFO] - Applying sampling rate: 100 Hz
+[2025-04-09 14:38:45,055][__main__][INFO] - Sampling Rate: 100 Hz | Waveforms Shape: (3, 6000)
+[2025-04-09 14:38:45,060][__main__][INFO] - Final Waveform after all configurations:
+[[-100.          -89.46074041  -85.69553702  -87.55581816  -92.84745179]
+ [  34.          -28.31097636  -48.05424938  -32.49786795    4.5847297 ]
+ [ 645.          674.13184314  683.36287456  675.6827084   657.36007821]]

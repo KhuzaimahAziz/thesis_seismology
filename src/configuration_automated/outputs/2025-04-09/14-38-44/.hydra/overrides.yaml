@@ -1,0 +1,3 @@
+- dataset=dummy_data
+- dataset.sampling_rates=100
+- dataset.component_orders=NZE
