@@ -1,0 +1,5 @@
+- dataset.name=DummyDataset
+- dataset.sampling_rates=100
+- training.epochs=1
+- train_augmentations=False
+- val_augmentations=False

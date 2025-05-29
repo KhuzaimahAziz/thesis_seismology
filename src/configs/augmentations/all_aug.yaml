@@ -1,4 +1,30 @@
-random_window:
-  _target_: seisbench.generate.RandomWindow
-  windowlen: 2000
-  strategy: "random"
+augmentations:
+  - _target_: seisbench.generate.WindowAroundSample
+    keys: ${phase_dict}  # Pulls the keys from phase_dict
+    samples_before: 3000
+    windowlen: 6000
+    selection: "random"
+    strategy: "variable"
+    enabled: true
+  
+  - _target_: seisbench.generate.RandomWindow
+    windowlen: 3001
+    strategy: "pad"
+    enabled: true
+
+  - _target_: seisbench.generate.Normalize
+    demean_axis: -1
+    amp_norm_axis: -1
+    amp_norm_type: "peak"
+    enabled: true
+
+  - _target_: seisbench.generate.ChangeDtype
+    dtype: np.float32
+    enabled: true
+
+  - _target_: seisbench.generate.ProbabilisticLabeller
+    label_columns: ${phase_dict}  # Pulls from phase_dict.yaml
+    model_labels: ${model.labels}
+    sigma: 30
+    dim: 0
+    enabled: true

@@ -1,0 +1,26 @@
+experiment_name: seismic_training
+train_augmentations: false
+val_augmentations: false
+dataset:
+  name: LenDB
+  component_orders: null
+  dimension_orders: null
+  sampling_rates: null
+training:
+  batch_size: 256
+  num_workers: 4
+  epochs: 5
+  optimizer:
+    name: Adam
+    params:
+      lr: 0.01
+      weight_decay: 0.0001
+model:
+  name: PhaseNet
+  phases: PSN
+  norm: peak
+augmentations:
+  random_window:
+    _target_: seisbench.generate.RandomWindow
+    windowlen: 2000
+    strategy: random

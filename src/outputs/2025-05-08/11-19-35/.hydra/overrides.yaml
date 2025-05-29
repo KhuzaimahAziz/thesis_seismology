@@ -1,0 +1,3 @@
+- dataset.name=DummyDataset
+- dataset.sampling_rates=100
+- training.epochs=1

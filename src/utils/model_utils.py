@@ -1,65 +1,125 @@
-import logging
 import torch
+import numpy as np
+import pytorch_lightning as pl
 import seisbench.models as sbm
-log = logging.getLogger(__name__)
+import seisbench.generate as sbg
 
-def setup_model(cfg):
-    model_name = cfg.model.name
 
-    if not hasattr(sbm, model_name):
-        log.error(f"❌ Model '{model_name}' is not found in seisbench.models.")
-        log.info(f"🧠 Available models are: {', '.join(m for m in dir(sbm) if not m.startswith('_'))}")
-        raise ValueError(f"Model '{model_name}' not found in seisbench.models")
+phase_dict = {
+    "trace_p_arrival_sample": "P",
+    "trace_pP_arrival_sample": "P",
+    "trace_P_arrival_sample": "P",
+    "trace_P1_arrival_sample": "P",
+    "trace_Pg_arrival_sample": "P",
+    "trace_Pn_arrival_sample": "P",
+    "trace_PmP_arrival_sample": "P",
+    "trace_pwP_arrival_sample": "P",
+    "trace_pwPm_arrival_sample": "P",
+    "trace_s_arrival_sample": "S",
+    "trace_S_arrival_sample": "S",
+    "trace_S1_arrival_sample": "S",
+    "trace_Sg_arrival_sample": "S",
+    "trace_SmS_arrival_sample": "S",
+    "trace_Sn_arrival_sample": "S",
+}
 
-    model_class = getattr(sbm, model_name)
-    model_kwargs = {k: v for k, v in cfg.model.items() if k != "name"}
 
-    log.info(f"🔧 Instantiating model: {model_name} with args: {model_kwargs}")
-    model = model_class(**model_kwargs)
-
-    if torch.cuda.is_available():
-        model.cuda()
-        log.info("🚀 Running on GPU")
-    else:
-        log.info("💻 Running on CPU")
-
-    return model
-
-def setup_optimizer(model, optimizer_cfg):
-    optimizer_class = getattr(torch.optim, optimizer_cfg.name)
-    return optimizer_class(model.parameters(), **optimizer_cfg.params)
 
 def loss_fn(y_pred, y_true, eps=1e-5):
+    """
+    Cross entropy loss
+
+    :param y_true: True label probabilities
+    :param y_pred: Predicted label probabilities
+    :param eps: Epsilon to clip values for stability
+    :return: Average loss across batch
+    """
     h = y_true * torch.log(y_pred + eps)
-    h = h.mean(-1).sum(-1)  # Mean along sample dimension and sum along pick dimension
+    if y_pred.ndim == 3:
+        h = h.mean(-1).sum(
+            -1
+        )  # Mean along sample dimension and sum along pick dimension
+    else:
+        h = h.sum(-1)  # Sum along pick dimension
     h = h.mean()  # Mean over batch axis
     return -h
 
-def train_loop(dataloader, model, optimizer):
-    size = len(dataloader.dataset)
-    log.info(f"🔁 Training on {size} samples")
-    for batch_id, batch in enumerate(dataloader):
-        pred = model(batch["X"].float().to(model.device))
-        loss = loss_fn(pred, batch["y"].float().to(model.device))
 
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
 
-        if batch_id % 5 == 0:
-            log.info(f"[Batch {batch_id}] Loss: {loss.item():.6f}")
+class SeisBenchLit(pl.LightningModule):
+    def __init__(self, lr=1e-2, sigma=20, sample_boundaries=(None, None), optimizer_params=None, **kwargs):
+        super().__init__()
+        self.save_hyperparameters()
+        self.lr = lr
+        self.sigma = sigma
+        self.sample_boundaries = sample_boundaries
+        self.optimizer_params = optimizer_params or {}
+        self.loss = loss_fn
+        self.model = sbm.PhaseNet(**kwargs)
 
-def test_loop(model, dataloader):
-    num_batches = len(dataloader)
-    test_loss = 0
+    def forward(self, x):
+        return self.model(x)
 
-    model.eval()
-    with torch.no_grad():
-        for batch in dataloader:
-            pred = model(batch["X"].to(model.device))
-            test_loss += loss_fn(pred, batch["y"].to(model.device)).item()
+    def shared_step(self, batch):
+        x = batch["X"]
+        y_true = batch["y"]
+        y_pred = self.model(x)
+        return self.loss(y_pred, y_true)
 
-    model.train()
-    avg_loss = test_loss / num_batches
-    log.info(f"Test avg loss: {avg_loss:>8f}\n")
-    return avg_loss
+    def training_step(self, batch, batch_idx):
+        loss = self.shared_step(batch)
+        self.log("train_loss", loss)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        loss = self.shared_step(batch)
+        self.log("val_loss", loss)
+        return loss
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(),**self.optimizer_params)
+        return optimizer
+
+    def get_augmentations(self):
+        return [
+            sbg.WindowAroundSample(
+                        list(phase_dict.keys()),
+                        samples_before=3000,
+                        windowlen=3001,
+                        selection="random",
+                        strategy="pad",
+            ),
+            sbg.RandomWindow(
+                low=self.sample_boundaries[0],
+                high=self.sample_boundaries[1],
+                windowlen=3001,
+                strategy="pad",
+            ),
+            sbg.ChangeDtype(np.float32),
+            sbg.ProbabilisticLabeller(
+                shape="gaussian", label_columns=phase_dict, sigma=self.sigma, dim=0
+            ),
+        ]
+
+    def predict_step(self, batch, batch_idx=None, dataloader_idx=None):
+        x = batch["X"]
+        window_borders = batch["window_borders"]
+
+        pred = self.model(x)
+
+        score_detection = torch.zeros(pred.shape[0])
+        score_p_or_s = torch.zeros(pred.shape[0])
+        p_sample = torch.zeros(pred.shape[0], dtype=int)
+        s_sample = torch.zeros(pred.shape[0], dtype=int)
+
+        for i in range(pred.shape[0]):
+            start_sample, end_sample = window_borders[i]
+            local_pred = pred[i, :, start_sample:end_sample]
+
+            score_detection[i] = torch.max(1 - local_pred[-1])  # 1 - noise
+            score_p_or_s[i] = torch.max(local_pred[0]) / torch.max(local_pred[1])
+
+            p_sample[i] = torch.argmax(local_pred[0])
+            s_sample[i] = torch.argmax(local_pred[1])
+
+        return score_detection, score_p_or_s, p_sample, s_sample

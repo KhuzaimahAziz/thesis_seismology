@@ -1,0 +1,4 @@
+- dataset.name=LenDB
+- model.name=PhaseNet
+- training.batch_size=64
+- training.epochs=1

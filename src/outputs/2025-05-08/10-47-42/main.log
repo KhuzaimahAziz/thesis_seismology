@@ -1,0 +1,13 @@
+[2025-05-08 10:47:42,644][__main__][INFO] - Starting experiment: seismic_training
+[2025-05-08 10:47:42,644][__main__][INFO] - Loading dataset: LenDB
+[2025-05-08 10:47:49,304][seisbench][WARNING] - Output component order not specified, defaulting to 'ZNE'.
+[2025-05-08 10:47:49,352][__main__][INFO] - Dataset loaded successfully.
+[2025-05-08 10:47:49,352][__main__][INFO] - Setting up generators...
+[2025-05-08 10:47:49,352][__main__][INFO] - Setting up model...
+[2025-05-08 10:47:49,352][utils.model_utils][INFO] - Instantiating model: PhaseNet with args: {'phases': 'PSN', 'norm': 'peak'}
+[2025-05-08 10:47:49,369][utils.model_utils][INFO] - Running on CPU
+[2025-05-08 10:47:49,369][__main__][INFO] - Setting up optimizer...
+[2025-05-08 10:47:51,705][__main__][INFO] - Preparing data loaders...
+[2025-05-08 10:47:51,705][__main__][INFO] - Beginning training for 1 epochs
+[2025-05-08 10:47:51,721][__main__][INFO] - Epoch 1/1
+[2025-05-08 10:47:51,721][utils.model_utils][INFO] - Training on 1244942 samples

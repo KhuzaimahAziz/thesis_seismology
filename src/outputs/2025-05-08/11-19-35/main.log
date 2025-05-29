@@ -1,0 +1,7 @@
+[2025-05-08 11:19:35,849][__main__][INFO] - Starting experiment: seismic_training
+[2025-05-08 11:19:35,849][__main__][INFO] - Loading dataset: DummyDataset
+[2025-05-08 11:19:35,880][seisbench][WARNING] - Output component order not specified, defaulting to 'ZNE'.
+[2025-05-08 11:19:35,880][__main__][INFO] - Dataset loaded successfully.
+[2025-05-08 11:19:35,880][__main__][INFO] - Applied sampling rate: 100
+[2025-05-08 11:19:35,880][__main__][INFO] - Setting up generators...
+[2025-05-08 11:19:35,880][__main__][INFO] - Applying training augmentations...
