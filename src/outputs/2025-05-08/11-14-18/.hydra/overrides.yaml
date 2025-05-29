@@ -1,4 +1,0 @@
-- dataset.name=LenDB
-- training.epochs=1
-- train_augmentations=False
-- val_augmentations=False
