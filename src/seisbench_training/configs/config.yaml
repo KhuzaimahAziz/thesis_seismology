@@ -1,18 +1,13 @@
 defaults:
   - _self_
-  - model: model_config
-  - augmentations: all_aug
+  - model: PhaseNet
+  - augmentations: all_augmentations
+  - dataset: Bohemia
 
 experiment_name: "seismic_training"
 
 train_augmentations: True
 val_augmentations: True
-
-dataset:
-  name: null
-  component_orders: null  #["ZNE", "ENZ", "NZE"]
-  dimension_orders: null  #["NWC", "NCW", "CWN"]
-  sampling_rates: null
 
 training:
   batch_size: 256

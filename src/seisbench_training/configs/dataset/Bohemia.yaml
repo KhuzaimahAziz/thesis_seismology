@@ -1,0 +1,4 @@
+name: BohemiaSaxony
+component_orders: ZNE #["ZNE", "ENZ", "NZE"]
+dimension_orders: null #["NWC", "NCW", "CWN"]
+sampling_rate: 100
