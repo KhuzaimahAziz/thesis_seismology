@@ -1,9 +1,8 @@
-import torch
 import numpy as np
 import pytorch_lightning as pl
-import seisbench.models as sbm
 import seisbench.generate as sbg
-
+import seisbench.models as sbm
+import torch
 
 phase_dict = {
     "trace_p_arrival_sample": "P",
@@ -22,7 +21,6 @@ phase_dict = {
     "trace_SmS_arrival_sample": "S",
     "trace_Sn_arrival_sample": "S",
 }
-
 
 
 def loss_fn(y_pred, y_true, eps=1e-5):
@@ -45,9 +43,15 @@ def loss_fn(y_pred, y_true, eps=1e-5):
     return -h
 
 
-
 class SeisBenchLit(pl.LightningModule):
-    def __init__(self, lr=1e-2, sigma=20, sample_boundaries=(None, None), optimizer_params=None, **kwargs):
+    def __init__(
+        self,
+        lr=1e-2,
+        sigma=20,
+        sample_boundaries=(None, None),
+        optimizer_params=None,
+        **kwargs,
+    ):
         super().__init__()
         self.save_hyperparameters()
         self.lr = lr
@@ -77,17 +81,17 @@ class SeisBenchLit(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(),**self.optimizer_params)
+        optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_params)
         return optimizer
 
     def get_augmentations(self):
         return [
             sbg.WindowAroundSample(
-                        list(phase_dict.keys()),
-                        samples_before=3000,
-                        windowlen=3001,
-                        selection="random",
-                        strategy="pad",
+                list(phase_dict.keys()),
+                samples_before=3000,
+                windowlen=3001,
+                selection="random",
+                strategy="pad",
             ),
             sbg.RandomWindow(
                 low=self.sample_boundaries[0],

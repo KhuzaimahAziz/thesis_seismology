@@ -6,7 +6,7 @@ augmentations:
     selection: "random"
     strategy: "variable"
     enabled: true
-  
+
   - _target_: seisbench.generate.RandomWindow
     windowlen: 3001
     strategy: "pad"
