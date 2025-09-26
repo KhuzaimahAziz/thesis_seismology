@@ -4,6 +4,7 @@ import seisbench.generate as sbg
 import seisbench.models as sbm
 import torch
 
+from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 phase_dict = {
     "trace_p_arrival_sample": "P",
     "trace_pP_arrival_sample": "P",
@@ -96,7 +97,7 @@ class SeisBenchLit(pl.LightningModule):
             sbg.RandomWindow(
                 low=self.sample_boundaries[0],
                 high=self.sample_boundaries[1],
-                windowlen=3001,
+                windowlen=3001, 
                 strategy="pad",
             ),
             sbg.ChangeDtype(np.float32),
@@ -127,3 +128,21 @@ class SeisBenchLit(pl.LightningModule):
             s_sample[i] = torch.argmax(local_pred[1])
 
         return score_detection, score_p_or_s, p_sample, s_sample
+
+def build_callbacks(cfg):
+    callbacks = []
+
+    if "callbacks" not in cfg.training:
+        return callbacks
+
+    cb_cfg = cfg.training.callbacks
+
+    if "model_checkpoint" in cb_cfg:
+        mc = ModelCheckpoint(**cb_cfg.model_checkpoint)
+        callbacks.append(mc)
+
+    if "early_stopping" in cb_cfg:
+        es = EarlyStopping(**cb_cfg.early_stopping)
+        callbacks.append(es)
+
+    return callbacks

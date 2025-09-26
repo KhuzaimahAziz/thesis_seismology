@@ -1,0 +1,3 @@
+training.epochs=10
+training.batch_size=256
+dataset.name=Bohemia
