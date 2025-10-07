@@ -1,6 +1,6 @@
 augmentations:
   - _target_: seisbench.generate.WindowAroundSample
-    keys: ${phase_dict}  # Pulls the keys from phase_dict
+    keys: ${phase_dict}  
     samples_before: 3000
     windowlen: 6000
     selection: "random"

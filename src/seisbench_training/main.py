@@ -2,20 +2,24 @@ import logging
 from pathlib import Path
 from typing import Type
 
+import os
 import hydra
 import pytorch_lightning as pl
-import seisbench.data as sbd
-import seisbench.generate as sbg
 import torch
 import typer
-from omegaconf import DictConfig
-from seisbench.util import worker_seeding
 from torch.utils.data import DataLoader
-from omegaconf import OmegaConf
-from hydra import compose, initialize_config_dir
+from pytorch_lightning.loggers import TensorBoardLogger, CSVLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
+
+
+# The following imports require the seisbench package to be installed and available in your environment.
+import seisbench.data as sbd
+import seisbench.generate as sbg
+from seisbench.util import worker_seeding
 
 from .utils.model_utils import SeisBenchLit
 from .utils.model_utils import build_callbacks
+
 app = typer.Typer()
 
 logging.basicConfig(
@@ -24,7 +28,7 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 log = logging.getLogger(__name__)
-
+torch.set_float32_matmul_precision("high")
 
 
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
@@ -78,16 +82,33 @@ def train_seisbench(cfg):
         num_workers=cfg.training.num_workers,
     )
 
+    csv_logger = CSVLogger("weights", cfg.experiment_name)
+    # csv_logger.log_hyperparams(cfg)
+    loggers = [csv_logger]
+    # tensorboard_logger = TensorBoardLogger("weights", cfg.experiment_name)
+    # tensorboard_logger.log_hyperparams(cfg) 
+    loggers = [csv_logger]
     log.info(f"Beginning training for {cfg.training.epochs} epochs...")
-    callbacks = build_callbacks(cfg)
+    checkpoint_callback = ModelCheckpoint(
+        save_top_k=1, filename="{epoch}-{step}", monitor="val_loss", mode="min"
+    ) 
+    callbacks = [checkpoint_callback]
+    root_dir = os.path.join("weights")
+
 
     trainer = pl.Trainer(
+        default_root_dir=root_dir,
         max_epochs=cfg.training.epochs,
-        accelerator="gpu" if torch.cuda.is_available() else "cpu",
-        log_every_n_steps=1,
+        min_epochs=cfg.training.epochs,
+        logger=loggers,
         callbacks=callbacks,
+        accelerator="gpu",
+        log_every_n_steps=1,
+        devices= 2,
+        strategy="ddp",
+        num_nodes = 1
     )
-    trainer.fit(pl_model, train_loader, val_loader)
+    trainer.fit(pl_model, val_loader, val_loader)
 
     log.info("Training complete!")
 

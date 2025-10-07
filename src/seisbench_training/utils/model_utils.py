@@ -37,7 +37,7 @@ def loss_fn(y_pred, y_true, eps=1e-5):
     if y_pred.ndim == 3:
         h = h.mean(-1).sum(
             -1
-        )  # Mean along sample dimension and sum along pick dimension
+        ) 
     else:
         h = h.sum(-1)  # Sum along pick dimension
     h = h.mean()  # Mean over batch axis
@@ -47,7 +47,7 @@ def loss_fn(y_pred, y_true, eps=1e-5):
 class SeisBenchLit(pl.LightningModule):
     def __init__(
         self,
-        lr=1e-2,
+        lr=1e-3,
         sigma=20,
         sample_boundaries=(None, None),
         optimizer_params=None,
@@ -73,12 +73,12 @@ class SeisBenchLit(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self.shared_step(batch)
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss = self.shared_step(batch)
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, prog_bar=True)
         return loss
 
     def configure_optimizers(self):
@@ -87,22 +87,32 @@ class SeisBenchLit(pl.LightningModule):
 
     def get_augmentations(self):
         return [
-            sbg.WindowAroundSample(
-                list(phase_dict.keys()),
-                samples_before=3000,
-                windowlen=3001,
-                selection="random",
-                strategy="pad",
+            # In 2/3 of the cases, select windows around picks, to reduce amount of noise traces in training.
+            # Uses strategy variable, as padding will be handled by the random window.
+            # In 1/3 of the cases, just returns the original trace, to keep diversity high.
+            sbg.OneOf(
+                [
+                    sbg.WindowAroundSample(
+                        list(phase_dict.keys()),
+                        samples_before=3000,
+                        windowlen=6000,
+                        selection="random",
+                        strategy="variable",
+                    ),
+                    sbg.NullAugmentation(),
+                ],
+                probabilities=[2, 1],
             ),
             sbg.RandomWindow(
                 low=self.sample_boundaries[0],
                 high=self.sample_boundaries[1],
-                windowlen=3001, 
+                windowlen=3001,
                 strategy="pad",
             ),
             sbg.ChangeDtype(np.float32),
+            sbg.Normalize(demean_axis=-1, amp_norm_axis=-1, amp_norm_type="peak"),
             sbg.ProbabilisticLabeller(
-                shape="gaussian", label_columns=phase_dict, sigma=self.sigma, dim=0
+                label_columns=phase_dict, sigma=self.sigma, dim=0
             ),
         ]
 

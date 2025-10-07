@@ -1,0 +1,7 @@
+lr: 0.001
+sigma: 20
+sample_boundaries:
+- null
+- null
+optimizer_params:
+  lr: 0.001
