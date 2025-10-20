@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/472068372883095715/55181877a516484da3969263d94a27a3/artifacts
+end_time: 1760703720418
+entry_point_name: ''
+experiment_id: '472068372883095715'
+lifecycle_stage: active
+run_id: 55181877a516484da3969263d94a27a3
+run_name: unique-mare-989
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760703634691
+status: 4
+tags: []
+user_id: khuzaima

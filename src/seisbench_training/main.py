@@ -1,24 +1,23 @@
 import logging
+import os
 from pathlib import Path
 from typing import Type
-
-import os
+import numpy as np
 import hydra
 import pytorch_lightning as pl
-import torch
-import typer
-from torch.utils.data import DataLoader
-from pytorch_lightning.loggers import TensorBoardLogger, CSVLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-
-
-# The following imports require the seisbench package to be installed and available in your environment.
 import seisbench.data as sbd
 import seisbench.generate as sbg
+import torch
+import typer
+from omegaconf import OmegaConf
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import CSVLogger, MLFlowLogger
 from seisbench.util import worker_seeding
+from torch.utils.data import DataLoader
 
+from metrics.evaluation_metrics import EvaluationMetrics
+from .utils.model_utils import phase_dict
 from .utils.model_utils import SeisBenchLit
-from .utils.model_utils import build_callbacks
 
 app = typer.Typer()
 
@@ -30,9 +29,79 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
+def get_augmentation_configs(cfg):
+    return ([
+        sbg.OneOf(
+            [
+                cfg.augmentations.window_default(
+                    list(phase_dict.keys()),
+                    samples_before=cfg.augmentations.window_default.samples_before,
+                    windowlen=cfg.augmentations.window_default.windowlen,
+                    selection=cfg.augmentations.window_default.selection,
+                    strategy=cfg.augmentations.window_default.strategy,
+                ),
+                cfg.augmentations.null_augmentation(),
+            ],
+            probabilities=[2, 1],
+        ),
+
+        cfg.augmentations.random_window_default._target_(
+            windowlen=cfg.augmentations.random_window_default.windowlen,
+            strategy=cfg.augmentations.random_window_default.strategy,
+        ),
+
+        cfg.augmentations.normalize_default._target_(
+            demean_axis=cfg.augmentations.normalize_default.demean_axis,
+            amp_norm_axis=cfg.augmentations.normalize_default.amp_norm_axis,
+            amp_norm_type=cfg.augmentations.normalize_default.amp_norm_type,
+        ),
+
+        cfg.augmentations.changeDtype._target_(
+            dtype=cfg.augmentations.changeDtype.dtype,
+        ),
+
+        cfg.augmentations.prob_labeller_default._target_(
+            label_columns=phase_dict,
+            sigma=cfg.augmentations.prob_labeller_default.sigma,
+            dim=cfg.augmentations.prob_labeller_default.dim,
+        ),
+    ])
 
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
 def train_seisbench(cfg):
+    augmentations = [
+        sbg.OneOf(
+            [
+                sbg.WindowAroundSample(
+                    list(phase_dict.keys()),
+                    samples_before=cfg.augmentations.window_default.samples_before,
+                    windowlen=cfg.augmentations.window_default.windowlen,
+                    selection=cfg.augmentations.window_default.selection,
+                    strategy=cfg.augmentations.window_default.strategy,
+                ),
+                sbg.NullAugmentation(),
+            ],
+            probabilities=[2, 1],
+        ),
+
+        sbg.RandomWindow(
+            windowlen=cfg.augmentations.random_window_default.windowlen,
+            strategy=cfg.augmentations.random_window_default.strategy,
+        ),
+
+        sbg.Normalize(
+            demean_axis=cfg.augmentations.normalize_default.demean_axis,
+            amp_norm_axis=cfg.augmentations.normalize_default.amp_norm_axis,
+            amp_norm_type=cfg.augmentations.normalize_default.amp_norm_type,
+        ),
+        sbg.ChangeDtype(np.float32),
+        sbg.ProbabilisticLabeller(
+            label_columns=phase_dict,
+            sigma=cfg.augmentations.prob_labeller_default.sigma,
+            dim=cfg.augmentations.prob_labeller_default.dim,
+            shape = cfg.augmentations.prob_labeller_default.shape,
+        ),
+    ]
 
     print(cfg)
     log.info(f"Starting experiment: {cfg.experiment_name}")
@@ -55,18 +124,21 @@ def train_seisbench(cfg):
 
     log.info("Setting up generators...")
     train_gen = sbg.GenericGenerator(train)
-    val_gen = sbg.GenericGenerator(dev)
+    dev_gen = sbg.GenericGenerator(dev)
+    test_gen = sbg.GenericGenerator(test)
 
     log.info("Setting up Lightning model...")
     pl_model = SeisBenchLit(
-        lr=cfg.training.optimizer.params.lr,
-        optimizer_params=cfg.training.optimizer.params,
+        lr=cfg.training.lr,
     )
 
     log.info("Adding Augmentation...")
-    train_gen.add_augmentations(pl_model.get_augmentations())
-    val_gen.add_augmentations(pl_model.get_augmentations())
+    train_gen.add_augmentations(augmentations)
+    dev_gen.add_augmentations(augmentations)
+    test_gen.add_augmentations(augmentations)
+
     log.info("Preparing data loaders...")
+
     train_loader = DataLoader(
         train_gen,
         batch_size=cfg.training.batch_size,
@@ -75,47 +147,67 @@ def train_seisbench(cfg):
         worker_init_fn=worker_seeding,
     )
 
-    val_loader = DataLoader(
-        val_gen,
+    dev_loader = DataLoader(
+        dev_gen,
+        batch_size=cfg.training.batch_size,
+        shuffle=True,
+        num_workers=cfg.training.num_workers,
+    )
+
+    test_loader = DataLoader(
+        test_gen,
         batch_size=cfg.training.batch_size,
         shuffle=False,
         num_workers=cfg.training.num_workers,
     )
 
     csv_logger = CSVLogger("weights", cfg.experiment_name)
-    # csv_logger.log_hyperparams(cfg)
-    loggers = [csv_logger]
-    # tensorboard_logger = TensorBoardLogger("weights", cfg.experiment_name)
-    # tensorboard_logger.log_hyperparams(cfg) 
-    loggers = [csv_logger]
-    log.info(f"Beginning training for {cfg.training.epochs} epochs...")
-    checkpoint_callback = ModelCheckpoint(
-        save_top_k=1, filename="{epoch}-{step}", monitor="val_loss", mode="min"
-    ) 
-    callbacks = [checkpoint_callback]
-    root_dir = os.path.join("weights")
+    csv_logger.log_hyperparams(cfg)
 
+    mlf_logger = MLFlowLogger(experiment_name="training_test_hydra", log_model="all")
+    mlf_logger
+
+    loggers = [csv_logger, mlf_logger]
+
+    checkpoint_callback = ModelCheckpoint(
+        save_top_k=1,
+        # filename="{epoch}-{step}",
+        monitor="val_loss",
+        mode="min",
+    )
+    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="train_loss", patience=5)
+
+    callbacks = [
+        checkpoint_callback,
+        early_stopping_callback,
+        EvaluationMetrics(mlf_logger),
+    ]
+
+    log.info(f"Beginning training for {cfg.training.epochs} epochs...")
 
     trainer = pl.Trainer(
-        default_root_dir=root_dir,
         max_epochs=cfg.training.epochs,
         min_epochs=cfg.training.epochs,
-        logger=loggers,
+        logger=loggers[1],
         callbacks=callbacks,
         accelerator="gpu",
         log_every_n_steps=1,
-        devices= 2,
+        devices=2,
         strategy="ddp",
-        num_nodes = 1
     )
-    trainer.fit(pl_model, val_loader, val_loader)
+    trainer.fit(pl_model, dev_loader, dev_loader)
+    mlf_logger.experiment.log_dict(
+        run_id=mlf_logger.run_id,
+        dictionary=OmegaConf.to_container(cfg, resolve=True),
+        artifact_file=f"config_{cfg.training.epochs}.yaml",
+    )
 
     log.info("Training complete!")
 
-
 @app.command()
-def train(config_file: Path) -> None:
+def train():
     train_seisbench()
+
 
 def main() -> None:
     app()

@@ -1,10 +1,11 @@
+import logging
+
 import numpy as np
 import pytorch_lightning as pl
 import seisbench.generate as sbg
 import seisbench.models as sbm
 import torch
 
-from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 phase_dict = {
     "trace_p_arrival_sample": "P",
     "trace_pP_arrival_sample": "P",
@@ -35,9 +36,7 @@ def loss_fn(y_pred, y_true, eps=1e-5):
     """
     h = y_true * torch.log(y_pred + eps)
     if y_pred.ndim == 3:
-        h = h.mean(-1).sum(
-            -1
-        ) 
+        h = h.mean(-1).sum(-1)
     else:
         h = h.sum(-1)  # Sum along pick dimension
     h = h.mean()  # Mean over batch axis
@@ -112,7 +111,7 @@ class SeisBenchLit(pl.LightningModule):
             sbg.ChangeDtype(np.float32),
             sbg.Normalize(demean_axis=-1, amp_norm_axis=-1, amp_norm_type="peak"),
             sbg.ProbabilisticLabeller(
-                label_columns=phase_dict, sigma=self.sigma, dim=0
+                label_columns=phase_dict, sigma=self.sigma, dim=0,
             ),
         ]
 
@@ -138,21 +137,3 @@ class SeisBenchLit(pl.LightningModule):
             s_sample[i] = torch.argmax(local_pred[1])
 
         return score_detection, score_p_or_s, p_sample, s_sample
-
-def build_callbacks(cfg):
-    callbacks = []
-
-    if "callbacks" not in cfg.training:
-        return callbacks
-
-    cb_cfg = cfg.training.callbacks
-
-    if "model_checkpoint" in cb_cfg:
-        mc = ModelCheckpoint(**cb_cfg.model_checkpoint)
-        callbacks.append(mc)
-
-    if "early_stopping" in cb_cfg:
-        es = EarlyStopping(**cb_cfg.early_stopping)
-        callbacks.append(es)
-
-    return callbacks

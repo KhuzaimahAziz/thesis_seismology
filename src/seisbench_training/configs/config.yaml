@@ -1,22 +1,11 @@
 defaults:
   - _self_
-  - model: PhaseNet
-  - augmentations: all_augmentations
-  - dataset: Bohemia
+  - model: default
+  - augmentations: default
+  - dataset: default
+  - training: default
 
 experiment_name: "seismic_training"
-
-train_augmentations: True
-val_augmentations: True
-
-training:
-  batch_size: 1024
-  num_workers: 16
-  epochs: 100
-  optimizer:
-    name: "Adam"
-    params:
-      lr: 1e-3
 
 
 

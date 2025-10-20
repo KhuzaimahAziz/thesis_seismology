@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/472068372883095715/a652860fb7434da29518320962d27685/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '472068372883095715'
+lifecycle_stage: active
+run_id: a652860fb7434da29518320962d27685
+run_name: zealous-snake-908
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760470942859
+status: 1
+tags: []
+user_id: khuzaima

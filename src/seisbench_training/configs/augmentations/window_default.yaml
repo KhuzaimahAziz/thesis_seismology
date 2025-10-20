@@ -1,0 +1,5 @@
+window_default:
+  samples_before: 3000
+  windowlen: 6000
+  selection: "random"
+  strategy: "variable"

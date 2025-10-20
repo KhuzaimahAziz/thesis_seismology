@@ -12,6 +12,7 @@ dependencies = [
     "seisbench>=0.10",
     "torch>=2.8",
     "typer>=0.17.4",
+    "matplotlib>=3.10.0"
 ]
 
 [project.optional-dependencies]

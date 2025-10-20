@@ -1,0 +1,5 @@
+defaults:
+  - window_default
+  - random_window_default
+  - normalize_default
+  - prob_labeller_default

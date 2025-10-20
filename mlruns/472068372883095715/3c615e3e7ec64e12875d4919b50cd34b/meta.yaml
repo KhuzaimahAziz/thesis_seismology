@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/472068372883095715/3c615e3e7ec64e12875d4919b50cd34b/artifacts
+end_time: 1760701969371
+entry_point_name: ''
+experiment_id: '472068372883095715'
+lifecycle_stage: active
+run_id: 3c615e3e7ec64e12875d4919b50cd34b
+run_name: resilient-mole-997
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760701905666
+status: 4
+tags: []
+user_id: khuzaima

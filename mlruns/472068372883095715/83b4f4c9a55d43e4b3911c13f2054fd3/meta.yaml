@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/472068372883095715/83b4f4c9a55d43e4b3911c13f2054fd3/artifacts
+end_time: 1760703563329
+entry_point_name: ''
+experiment_id: '472068372883095715'
+lifecycle_stage: active
+run_id: 83b4f4c9a55d43e4b3911c13f2054fd3
+run_name: beautiful-swan-322
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760703476799
+status: 4
+tags: []
+user_id: khuzaima

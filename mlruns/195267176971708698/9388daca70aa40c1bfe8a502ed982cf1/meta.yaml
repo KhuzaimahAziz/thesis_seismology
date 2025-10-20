@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/195267176971708698/9388daca70aa40c1bfe8a502ed982cf1/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '195267176971708698'
+lifecycle_stage: active
+run_id: 9388daca70aa40c1bfe8a502ed982cf1
+run_name: adventurous-gnat-963
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760466900760
+status: 1
+tags: []
+user_id: khuzaima

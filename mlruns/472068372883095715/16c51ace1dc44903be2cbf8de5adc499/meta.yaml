@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/472068372883095715/16c51ace1dc44903be2cbf8de5adc499/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '472068372883095715'
+lifecycle_stage: active
+run_id: 16c51ace1dc44903be2cbf8de5adc499
+run_name: kindly-conch-556
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760467642887
+status: 1
+tags: []
+user_id: khuzaima

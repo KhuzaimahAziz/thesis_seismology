@@ -1,0 +1,5 @@
+normalize_default:
+  demean_axis: -1
+  amp_norm_axis: -1
+  amp_norm_type: "peak"
+

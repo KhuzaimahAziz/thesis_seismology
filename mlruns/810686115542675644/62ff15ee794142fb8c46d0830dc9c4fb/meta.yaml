@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/810686115542675644/62ff15ee794142fb8c46d0830dc9c4fb/artifacts
+end_time: 1760883860147
+entry_point_name: ''
+experiment_id: '810686115542675644'
+lifecycle_stage: active
+run_id: 62ff15ee794142fb8c46d0830dc9c4fb
+run_name: upbeat-snipe-673
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760881825540
+status: 3
+tags: []
+user_id: khuzaima

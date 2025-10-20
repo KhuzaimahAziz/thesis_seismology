@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/810686115542675644/ca4b1e6f89e54e5fa0210b1f7d9a1027/artifacts
+end_time: 1760894283398
+entry_point_name: ''
+experiment_id: '810686115542675644'
+lifecycle_stage: active
+run_id: ca4b1e6f89e54e5fa0210b1f7d9a1027
+run_name: unleashed-kit-375
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760887637116
+status: 3
+tags: []
+user_id: khuzaima

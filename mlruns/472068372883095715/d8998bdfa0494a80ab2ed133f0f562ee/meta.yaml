@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/472068372883095715/d8998bdfa0494a80ab2ed133f0f562ee/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '472068372883095715'
+lifecycle_stage: active
+run_id: d8998bdfa0494a80ab2ed133f0f562ee
+run_name: nimble-lynx-266
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760702301242
+status: 1
+tags: []
+user_id: khuzaima

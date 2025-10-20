@@ -1,0 +1,15 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/src/mlruns/502433145338799909/015ca8584bd24f0499b70c888294fa89/artifacts
+deleted_time: 1760454129108
+end_time: 1760453939735
+entry_point_name: ''
+experiment_id: '502433145338799909'
+lifecycle_stage: deleted
+run_id: 015ca8584bd24f0499b70c888294fa89
+run_name: polite-lynx-11
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1760453783297
+status: 3
+tags: []
+user_id: khuzaima

@@ -1,0 +1,4 @@
+random_window_default:
+  windowlen: 3001
+  strategy: "pad"
+
