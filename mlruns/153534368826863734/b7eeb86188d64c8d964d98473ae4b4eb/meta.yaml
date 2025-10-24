@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/153534368826863734/b7eeb86188d64c8d964d98473ae4b4eb/artifacts
+end_time: 1761255797097
+entry_point_name: ''
+experiment_id: '153534368826863734'
+lifecycle_stage: active
+run_id: b7eeb86188d64c8d964d98473ae4b4eb
+run_name: zealous-mink-580
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761254205854
+status: 3
+tags: []
+user_id: khuzaima

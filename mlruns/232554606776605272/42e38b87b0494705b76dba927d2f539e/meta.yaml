@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/232554606776605272/42e38b87b0494705b76dba927d2f539e/artifacts
+end_time: 1761071668893
+entry_point_name: ''
+experiment_id: '232554606776605272'
+lifecycle_stage: active
+run_id: 42e38b87b0494705b76dba927d2f539e
+run_name: monumental-finch-316
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761071426877
+status: 3
+tags: []
+user_id: khuzaima

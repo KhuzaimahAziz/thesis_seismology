@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/153534368826863734/b8655ed3b0074b5597bf44576d22fb17/artifacts
+end_time: null
+entry_point_name: ''
+experiment_id: '153534368826863734'
+lifecycle_stage: active
+run_id: b8655ed3b0074b5597bf44576d22fb17
+run_name: calm-owl-209
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761253665955
+status: 1
+tags: []
+user_id: khuzaima

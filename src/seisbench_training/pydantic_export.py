@@ -5,6 +5,10 @@ from pydantic import BaseModel, Field, PositiveFloat, PositiveInt
 
 
 class SeisbenchModelArgs(BaseModel):
+
+    dataset: str = Field(
+        description="Name of the dataset",
+    )
     component_order: Literal["ZNE", "ENZ", "Z"] = Field(
         default="ZNE",
         description="Order of the components",

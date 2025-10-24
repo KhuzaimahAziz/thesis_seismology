@@ -154,33 +154,24 @@ def train_seisbench(cfg):
         num_workers=cfg.training.num_workers,
     )
 
-    test_loader = DataLoader(
-        test_gen,
-        batch_size=cfg.training.batch_size,
-        shuffle=False,
-        num_workers=cfg.training.num_workers,
-    )
-
     csv_logger = CSVLogger("weights", cfg.experiment_name)
-    csv_logger.log_hyperparams(cfg)
+    # csv_logger.log_hyperparams(cfg)
 
-    mlf_logger = MLFlowLogger(experiment_name="training_test_hydra", log_model="all")
-    mlf_logger
-
+    mlf_logger = MLFlowLogger(experiment_name=cfg.experiment_name,
+                               log_model=True)
     loggers = [csv_logger, mlf_logger]
 
     checkpoint_callback = ModelCheckpoint(
-        save_top_k=1,
-        # filename="{epoch}-{step}",
+        filename=f"best_model_{cfg.augmentations.prob_labeller_default.shape}",
         monitor="val_loss",
         mode="min",
     )
-    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="train_loss", patience=5)
+    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="val_loss", patience=5)
 
     callbacks = [
         checkpoint_callback,
         early_stopping_callback,
-        EvaluationMetrics(mlf_logger),
+        # EvaluationMetrics(mlf_logger),
     ]
 
     log.info(f"Beginning training for {cfg.training.epochs} epochs...")
@@ -195,7 +186,8 @@ def train_seisbench(cfg):
         devices=2,
         strategy="ddp",
     )
-    trainer.fit(pl_model, dev_loader, dev_loader)
+
+    trainer.fit(pl_model, train_loader, dev_loader)
     mlf_logger.experiment.log_dict(
         run_id=mlf_logger.run_id,
         dictionary=OmegaConf.to_container(cfg, resolve=True),
@@ -204,13 +196,13 @@ def train_seisbench(cfg):
 
     log.info("Training complete!")
 
-@app.command()
+# @app.command()
 def train():
     train_seisbench()
 
 
 def main() -> None:
-    app()
+    train()
 
 
 # if __name__ == "__main__":

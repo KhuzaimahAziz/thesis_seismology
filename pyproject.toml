@@ -19,8 +19,8 @@ dependencies = [
 dev = ["pre-commit>=4.3"]
 
 [project.scripts]
-seisbench-training = "seisbench_training.main:main"
-
+train-seisbench= "seisbench_training.main:main"
+generate-eval-label = "seisbench_training.generate_eval_target:main"
 
 
 [tool.setuptools.package-data]

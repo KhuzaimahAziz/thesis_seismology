@@ -1,0 +1,14 @@
+artifact_uri: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/282425757216478169/cd81f57a2a9b4e658f61211dcde9f430/artifacts
+end_time: 1761264239121
+entry_point_name: ''
+experiment_id: '282425757216478169'
+lifecycle_stage: active
+run_id: cd81f57a2a9b4e658f61211dcde9f430
+run_name: amazing-fish-378
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761258698369
+status: 3
+tags: []
+user_id: khuzaima

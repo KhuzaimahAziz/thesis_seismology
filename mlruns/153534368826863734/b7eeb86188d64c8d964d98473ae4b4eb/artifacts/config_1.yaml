@@ -1,0 +1,31 @@
+augmentations:
+  normalize_default:
+    amp_norm_axis: -1
+    amp_norm_type: peak
+    demean_axis: -1
+  prob_labeller_default:
+    dim: 0
+    shape: gaussian
+    sigma: 30
+  random_window_default:
+    strategy: pad
+    windowlen: 3001
+  window_default:
+    samples_before: 3000
+    selection: random
+    strategy: variable
+    windowlen: 6000
+dataset:
+  component_orders: ZNE
+  dimension_orders: null
+  name: BohemiaSaxony
+  sampling_rate: 100
+experiment_name: training_2_epochs
+model:
+  name: PhaseNet
+training:
+  batch_size: 1024
+  epochs: 1
+  lr: 0.001
+  num_workers: 16
+  optimizer: Adam
