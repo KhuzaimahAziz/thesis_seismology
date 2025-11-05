@@ -1,9 +1,8 @@
 import logging
-import os
-from pathlib import Path
 from typing import Type
-import numpy as np
+
 import hydra
+import numpy as np
 import pytorch_lightning as pl
 import seisbench.data as sbd
 import seisbench.generate as sbg
@@ -15,9 +14,9 @@ from pytorch_lightning.loggers import CSVLogger, MLFlowLogger
 from seisbench.util import worker_seeding
 from torch.utils.data import DataLoader
 
-from metrics.evaluation_metrics import EvaluationMetrics
-from .utils.model_utils import phase_dict
-from .utils.model_utils import SeisBenchLit
+from metrics.callbacks import EvaluationMetrics
+
+from .utils.model_utils import SeisBenchLit, phase_dict
 
 app = typer.Typer()
 
@@ -29,8 +28,9 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
+
 def get_augmentation_configs(cfg):
-    return ([
+    return [
         sbg.OneOf(
             [
                 cfg.augmentations.window_default(
@@ -44,28 +44,25 @@ def get_augmentation_configs(cfg):
             ],
             probabilities=[2, 1],
         ),
-
         cfg.augmentations.random_window_default._target_(
             windowlen=cfg.augmentations.random_window_default.windowlen,
             strategy=cfg.augmentations.random_window_default.strategy,
         ),
-
         cfg.augmentations.normalize_default._target_(
             demean_axis=cfg.augmentations.normalize_default.demean_axis,
             amp_norm_axis=cfg.augmentations.normalize_default.amp_norm_axis,
             amp_norm_type=cfg.augmentations.normalize_default.amp_norm_type,
         ),
-
         cfg.augmentations.changeDtype._target_(
             dtype=cfg.augmentations.changeDtype.dtype,
         ),
-
         cfg.augmentations.prob_labeller_default._target_(
             label_columns=phase_dict,
             sigma=cfg.augmentations.prob_labeller_default.sigma,
             dim=cfg.augmentations.prob_labeller_default.dim,
         ),
-    ])
+    ]
+
 
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
 def train_seisbench(cfg):
@@ -83,12 +80,10 @@ def train_seisbench(cfg):
             ],
             probabilities=[2, 1],
         ),
-
         sbg.RandomWindow(
             windowlen=cfg.augmentations.random_window_default.windowlen,
             strategy=cfg.augmentations.random_window_default.strategy,
         ),
-
         sbg.Normalize(
             demean_axis=cfg.augmentations.normalize_default.demean_axis,
             amp_norm_axis=cfg.augmentations.normalize_default.amp_norm_axis,
@@ -99,7 +94,7 @@ def train_seisbench(cfg):
             label_columns=phase_dict,
             sigma=cfg.augmentations.prob_labeller_default.sigma,
             dim=cfg.augmentations.prob_labeller_default.dim,
-            shape = cfg.augmentations.prob_labeller_default.shape,
+            shape=cfg.augmentations.prob_labeller_default.shape,
         ),
     ]
 
@@ -150,15 +145,21 @@ def train_seisbench(cfg):
     dev_loader = DataLoader(
         dev_gen,
         batch_size=cfg.training.batch_size,
+        num_workers=cfg.training.num_workers,
+    )
+
+    test_loader = DataLoader(
+        test_gen,
+        batch_size=cfg.training.batch_size,
         shuffle=True,
         num_workers=cfg.training.num_workers,
+        worker_init_fn=worker_seeding,
     )
 
     csv_logger = CSVLogger("weights", cfg.experiment_name)
     # csv_logger.log_hyperparams(cfg)
 
-    mlf_logger = MLFlowLogger(experiment_name=cfg.experiment_name,
-                               log_model=True)
+    mlf_logger = MLFlowLogger(experiment_name=cfg.experiment_name, log_model=True)
     loggers = [csv_logger, mlf_logger]
 
     checkpoint_callback = ModelCheckpoint(
@@ -166,12 +167,14 @@ def train_seisbench(cfg):
         monitor="val_loss",
         mode="min",
     )
-    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="val_loss", patience=5)
+    early_stopping_callback = pl.callbacks.EarlyStopping(
+        monitor="val_loss", patience=10
+    )
 
     callbacks = [
         checkpoint_callback,
         early_stopping_callback,
-        # EvaluationMetrics(mlf_logger),
+        EvaluationMetrics(mlf_logger),
     ]
 
     log.info(f"Beginning training for {cfg.training.epochs} epochs...")
@@ -187,7 +190,7 @@ def train_seisbench(cfg):
         strategy="ddp",
     )
 
-    trainer.fit(pl_model, train_loader, dev_loader)
+    trainer.fit(pl_model, train_loader, test_loader)
     mlf_logger.experiment.log_dict(
         run_id=mlf_logger.run_id,
         dictionary=OmegaConf.to_container(cfg, resolve=True),
@@ -195,6 +198,7 @@ def train_seisbench(cfg):
     )
 
     log.info("Training complete!")
+
 
 # @app.command()
 def train():

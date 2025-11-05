@@ -1,14 +1,20 @@
-import seisbench.data as sbd
-
 from pathlib import Path
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
+
 import hydra
+import numpy as np
+import pandas as pd
+from tqdm import tqdm
+
+# Try to import seisbench.data and provide a clear error if it's missing.
+try:
+    import seisbench.data as sbd
+except Exception as e:
+    raise ImportError(
+        "seisbench.data could not be imported. Please install seisbench (e.g. `pip install seisbench`) "
+        "or ensure it is available on PYTHONPATH."
+    ) from e
+
 from .utils.model_utils import phase_dict
-
-
-
 
 
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
@@ -31,10 +37,14 @@ def main(cfg):
 
     dataset.preload_waveforms(pbar=True)
 
-    generate_task23(dataset, output, cfg.dataset.sampling_rate)
-    
+    generate_eval_labels(dataset, output, cfg.dataset.sampling_rate)
 
-def generate_task23(dataset, output, sampling_rate):
+
+def generate_eval_labels(
+    dataset: sbd.BenchmarkDataset,
+    output: Path,
+    sampling_rate: int,
+) -> None:
     np.random.seed(42)
     windowlen = 10 * sampling_rate  # 30 s windows
     labels = []
@@ -42,12 +52,9 @@ def generate_task23(dataset, output, sampling_rate):
     for idx in tqdm(range(len(dataset)), total=len(dataset)):
         waveforms, metadata = dataset.get_sample(idx)
 
-        if "split" in metadata:
-            trace_split = metadata["split"]
-        else:
-            trace_split = ""
+        trace_split = metadata.get("split", "")
 
-        def checkphase(metadata, phase, npts):
+        def checkphase(metadata, phase, npts) -> bool:
             return (
                 phase in metadata
                 and not np.isnan(metadata[phase])
@@ -122,7 +129,12 @@ def generate_task23(dataset, output, sampling_rate):
     labels.to_csv(output / "generated_labels.csv", index=False)
 
 
-def select_window_containing(npts, windowlen, containing=None, bounds=(100, 100)):
+def select_window_containing(
+    npts: int,
+    windowlen: int,
+    containing: int | None = None,
+    bounds: tuple[int, int] = (100, 100),
+):
     """
     Selects a window from a larger trace.
 

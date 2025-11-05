@@ -5,6 +5,8 @@ outputs/
 .vscode/
 graphs_data/
 output/
+mlruns/
+
 # Python-generated files
 __pycache__/
 *.py[oc]

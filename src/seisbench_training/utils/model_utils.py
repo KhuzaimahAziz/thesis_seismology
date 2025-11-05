@@ -25,6 +25,13 @@ phase_dict = {
 }
 
 
+def get_eval_augmentations():
+    return [
+            sbg.SteeredWindow(windowlen=3001, strategy="pad"),
+            sbg.ChangeDtype(np.float32),
+            sbg.Normalize(demean_axis=-1, amp_norm_axis=-1, amp_norm_type="peak"),
+    ]
+
 def loss_fn(y_pred, y_true, eps=1e-5):
     """
     Cross entropy loss
