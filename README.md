@@ -13,7 +13,7 @@ PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for se
   * 
 * **Reproducible experiments** with Hydra logging and config saving
   
-* **MLflow Pipelime** for evaluation and saving best model.
+* **MLflow Pipeline** for evaluation and saving best model.
 
    * Setup Mlflow callback that evaluates model metrics during training from validation dataset and save metrics and plots in mlflow.
    * Once the training is finished it saves the best_model as artifact with the details of the model and the config that it was trained on.
@@ -21,4 +21,5 @@ PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for se
 
 
   
+
 
