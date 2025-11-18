@@ -1,4 +1,4 @@
-# PhasePicker: A Configurable Seismic Phase Picking Pipeline
+# Seisbench Training : A Configurable Seismic Phase Picking Pipeline
 
 PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for seismic phase picking built on top of **SeisBench**. It supports flexible dataset loading, augmentation, model configuration, not only training workflows but also the evaluation workflow using **Mlflow**.
 
@@ -21,3 +21,4 @@ PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for se
 
 
   
+
