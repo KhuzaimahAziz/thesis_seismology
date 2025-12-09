@@ -1,31 +1,26 @@
-# thesis_seismology
+# Seisbench Training : A Configurable Seismic Phase Picking Pipeline
 
-```
-thesis_seismology
-├─ .pre-commit-config.yaml
-├─ README.md
-├─ cluster-traning.md
-├─ notebooks
-│  └─ initial_analysis.ipynb
-├─ pyproject.toml
-└─ src
-   └─ seisbench_training
-      ├─ __init__.py
-      ├─ configs
-      │  ├─ __init__.py
-      │  ├─ augmentations
-      │  │  ├─ all_augmentations.yaml
-      │  │  └─ phase_dict.yaml
-      │  ├─ config.yaml
-      │  ├─ dataset
-      │  │  ├─ Bohemia.yaml
-      │  │  ├─ ETHZ.yaml
-      │  │  └─ GEOFON.yaml
-      │  └─ model
-      │     └─ PhaseNet.yaml
-      ├─ main.py
-      └─ utils
-         ├─ __init__.py
-         └─ model_utils.py
+PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for seismic phase picking built on top of **SeisBench**. It supports flexible dataset loading, augmentation, model configuration, not only training workflows but also the evaluation workflow using **Mlflow**.
 
-```
+## 🚀 Features
+
+* **Hydra Configuration** for every component:
+
+  * Dataset (name, component_orders, dimension_orders, samplng_rate)
+  * Augmentations (probabilitic_labeller, normalize, randow_window)
+  * Training (lr, epochs, batch_size, n_workers, optimizer)
+  * Model (model_name)
+  * 
+* **Reproducible experiments** with Hydra logging and config saving
+  
+* **MLflow Pipeline** for evaluation and saving best model.
+
+   * Setup Mlflow callback that evaluates model metrics during training from validation dataset and save metrics and plots in mlflow.
+   * Once the training is finished it saves the best_model as artifact with the details of the model and the config that it was trained on.
+  
+
+
+  
+
+
+
