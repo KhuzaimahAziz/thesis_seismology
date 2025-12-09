@@ -1,6 +1,0 @@
-artifact_location: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/src/mlruns/692832596327811357
-creation_time: 1760454390823
-experiment_id: '692832596327811357'
-last_update_time: 1760454390823
-lifecycle_stage: active
-name: test_full_training

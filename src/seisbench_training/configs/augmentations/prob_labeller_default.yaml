@@ -1,4 +1,4 @@
 prob_labeller_default:
-  sigma: 30
+  sigma: 10
   dim: 0
   shape: "gaussian"

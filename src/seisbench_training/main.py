@@ -13,9 +13,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger, MLFlowLogger
 from seisbench.util import worker_seeding
 from torch.utils.data import DataLoader
-
 from metrics.callbacks import EvaluationMetrics
-
 from .utils.model_utils import SeisBenchLit, phase_dict
 
 app = typer.Typer()
@@ -98,7 +96,7 @@ def train_seisbench(cfg):
         ),
     ]
 
-    print(cfg)
+    log.info(cfg)
     log.info(f"Starting experiment: {cfg.experiment_name}")
     dataset = cfg.dataset
     log.info(f"Loading dataset: {dataset.name}")
@@ -125,8 +123,14 @@ def train_seisbench(cfg):
     log.info("Setting up Lightning model...")
     pl_model = SeisBenchLit(
         lr=cfg.training.lr,
+        sigma=cfg.augmentations.prob_labeller_default.sigma,
+        pretrained_model_name=cfg.training.pretrained_model_name,
+        transfer_learning =cfg.training.transfer_learning,
     )
-
+    if cfg.training.transfer_learning == True:
+            filename=f"best_model_{cfg.augmentations.prob_labeller_default.shape}_transfer_learning_{cfg.training.pretrained_model_name}"
+    else:
+            filename=f"best_model_{cfg.augmentations.prob_labeller_default.shape}_no_transfer_learning"
     log.info("Adding Augmentation...")
     train_gen.add_augmentations(augmentations)
     dev_gen.add_augmentations(augmentations)
@@ -142,12 +146,6 @@ def train_seisbench(cfg):
         worker_init_fn=worker_seeding,
     )
 
-    dev_loader = DataLoader(
-        dev_gen,
-        batch_size=cfg.training.batch_size,
-        num_workers=cfg.training.num_workers,
-    )
-
     test_loader = DataLoader(
         test_gen,
         batch_size=cfg.training.batch_size,
@@ -156,20 +154,21 @@ def train_seisbench(cfg):
         worker_init_fn=worker_seeding,
     )
 
-    csv_logger = CSVLogger("weights", cfg.experiment_name)
-    # csv_logger.log_hyperparams(cfg)
+    dev_loader = DataLoader(
+        dev_gen,
+        batch_size=cfg.training.batch_size,
+        num_workers=cfg.training.num_workers,
+    )
+
 
     mlf_logger = MLFlowLogger(experiment_name=cfg.experiment_name, log_model=True)
-    loggers = [csv_logger, mlf_logger]
 
     checkpoint_callback = ModelCheckpoint(
-        filename=f"best_model_{cfg.augmentations.prob_labeller_default.shape}",
+        filename=filename,
         monitor="val_loss",
         mode="min",
     )
-    early_stopping_callback = pl.callbacks.EarlyStopping(
-        monitor="val_loss", patience=10
-    )
+    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="val_loss", patience=3)
 
     callbacks = [
         checkpoint_callback,
@@ -182,7 +181,7 @@ def train_seisbench(cfg):
     trainer = pl.Trainer(
         max_epochs=cfg.training.epochs,
         min_epochs=cfg.training.epochs,
-        logger=loggers[1],
+        logger=mlf_logger,
         callbacks=callbacks,
         accelerator="gpu",
         log_every_n_steps=1,
@@ -190,7 +189,7 @@ def train_seisbench(cfg):
         strategy="ddp",
     )
 
-    trainer.fit(pl_model, train_loader, test_loader)
+    trainer.fit(pl_model, dev_loader, test_loader)
     mlf_logger.experiment.log_dict(
         run_id=mlf_logger.run_id,
         dictionary=OmegaConf.to_container(cfg, resolve=True),

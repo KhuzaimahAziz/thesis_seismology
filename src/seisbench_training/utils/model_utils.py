@@ -4,6 +4,7 @@ import numpy as np
 import pytorch_lightning as pl
 import seisbench.generate as sbg
 import seisbench.models as sbm
+import hydra
 import torch
 
 phase_dict = {
@@ -24,13 +25,6 @@ phase_dict = {
     "trace_Sn_arrival_sample": "S",
 }
 
-
-def get_eval_augmentations():
-    return [
-            sbg.SteeredWindow(windowlen=3001, strategy="pad"),
-            sbg.ChangeDtype(np.float32),
-            sbg.Normalize(demean_axis=-1, amp_norm_axis=-1, amp_norm_type="peak"),
-    ]
 
 def loss_fn(y_pred, y_true, eps=1e-5):
     """
@@ -53,8 +47,10 @@ def loss_fn(y_pred, y_true, eps=1e-5):
 class SeisBenchLit(pl.LightningModule):
     def __init__(
         self,
-        lr=1e-3,
-        sigma=20,
+        lr,
+        sigma,
+        transfer_learning: str = None,
+        pretrained_model_name: str = None,
         sample_boundaries=(None, None),
         optimizer_params=None,
         **kwargs,
@@ -66,7 +62,14 @@ class SeisBenchLit(pl.LightningModule):
         self.sample_boundaries = sample_boundaries
         self.optimizer_params = optimizer_params or {}
         self.loss = loss_fn
-        self.model = sbm.PhaseNet(**kwargs)
+        self.transfer_learning = transfer_learning
+        self.pretrained_model_name = pretrained_model_name
+        if self.transfer_learning == True:
+            self.model = sbm.PhaseNet.from_pretrained(
+                self.pretrained_model_name, **kwargs
+            )
+        else:
+            self.model = sbm.PhaseNet(**kwargs)
 
     def forward(self, x):
         return self.model(x)
@@ -93,9 +96,6 @@ class SeisBenchLit(pl.LightningModule):
 
     def get_augmentations(self):
         return [
-            # In 2/3 of the cases, select windows around picks, to reduce amount of noise traces in training.
-            # Uses strategy variable, as padding will be handled by the random window.
-            # In 1/3 of the cases, just returns the original trace, to keep diversity high.
             sbg.OneOf(
                 [
                     sbg.WindowAroundSample(
