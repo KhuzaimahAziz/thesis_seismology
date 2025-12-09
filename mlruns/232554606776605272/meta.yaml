@@ -1,6 +1,0 @@
-artifact_location: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/232554606776605272
-creation_time: 1760991000784
-experiment_id: '232554606776605272'
-last_update_time: 1760991000784
-lifecycle_stage: active
-name: training_test_hydra

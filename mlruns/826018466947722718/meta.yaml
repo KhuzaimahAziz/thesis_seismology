@@ -1,6 +1,0 @@
-artifact_location: file:///storage/vast-gfz-hpc-01/home/khuzaima/project/thesis_seismology/mlruns/826018466947722718
-creation_time: 1760896109002
-experiment_id: '826018466947722718'
-last_update_time: 1760896109002
-lifecycle_stage: active
-name: training_70_epochs_for_metrics
