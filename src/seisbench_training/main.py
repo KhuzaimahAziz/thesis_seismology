@@ -10,10 +10,12 @@ import torch
 import typer
 from omegaconf import OmegaConf
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.loggers import CSVLogger, MLFlowLogger
+from pytorch_lightning.loggers import MLFlowLogger
 from seisbench.util import worker_seeding
 from torch.utils.data import DataLoader
+
 from metrics.callbacks import EvaluationMetrics
+
 from .utils.model_utils import SeisBenchLit, phase_dict
 
 app = typer.Typer()
@@ -111,9 +113,14 @@ def train_seisbench(cfg):
     data = DatasetClass(
         component_order=dataset.component_orders,
         sampling_rate=dataset.sampling_rate,
+        cache="full",
+        # cache="trace",  # 'full' caches the full block
     )
     log.info("Dataset loaded successfully.")
     train, dev, test = data.train_dev_test()
+    train.preload_waveforms(pbar=True)
+    dev.preload_waveforms(pbar=True)
+    test.preload_waveforms(pbar=True)
 
     log.info("Setting up generators...")
     train_gen = sbg.GenericGenerator(train)
@@ -125,12 +132,13 @@ def train_seisbench(cfg):
         lr=cfg.training.lr,
         sigma=cfg.augmentations.prob_labeller_default.sigma,
         pretrained_model_name=cfg.training.pretrained_model_name,
-        transfer_learning =cfg.training.transfer_learning,
     )
-    if cfg.training.transfer_learning == True:
-            filename=f"best_model_{cfg.augmentations.prob_labeller_default.shape}_transfer_learning_{cfg.training.pretrained_model_name}"
-    else:
-            filename=f"best_model_{cfg.augmentations.prob_labeller_default.shape}_no_transfer_learning"
+    tpl_transfer = (
+        ""
+        if not cfg.training.pretrained_model_name
+        else f"_from_{cfg.training.pretrained_model_name}"
+    )
+    filename = f"best_model_sigma_{cfg.augmentations.prob_labeller_default.shape}{tpl_transfer}"
     log.info("Adding Augmentation...")
     train_gen.add_augmentations(augmentations)
     dev_gen.add_augmentations(augmentations)
@@ -160,9 +168,12 @@ def train_seisbench(cfg):
         num_workers=cfg.training.num_workers,
     )
 
-
-    mlf_logger = MLFlowLogger(experiment_name=cfg.experiment_name, log_model=True)
-
+    mlf_logger = MLFlowLogger(
+        experiment_name=cfg.experiment_name,
+        log_model=True,
+    )
+    # TODO: Add SystemMetrics callback
+    # https://github.com/Lightning-AI/pytorch-lightning/issues/20563
     checkpoint_callback = ModelCheckpoint(
         filename=filename,
         monitor="val_loss",
@@ -185,11 +196,10 @@ def train_seisbench(cfg):
         callbacks=callbacks,
         accelerator="gpu",
         log_every_n_steps=1,
-        devices=2,
-        strategy="ddp",
+        devices=1,
     )
 
-    trainer.fit(pl_model, dev_loader, test_loader)
+    trainer.fit(pl_model, train_loader, test_loader)
     mlf_logger.experiment.log_dict(
         run_id=mlf_logger.run_id,
         dictionary=OmegaConf.to_container(cfg, resolve=True),

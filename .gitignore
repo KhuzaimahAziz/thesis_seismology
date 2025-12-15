@@ -10,6 +10,7 @@ data/
 graphs-data/
 src/mlruns/
 notebooks/
+
 # Python-generated files
 __pycache__/
 *.py[oc]

@@ -1,40 +1,56 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import TYPE_CHECKING, Literal
 
 import numpy as np
-import pandas as pd
-import torch
-from mlflow.metrics import MetricValue
+from matplotlib import pyplot as plt
 from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.loggers import MLFlowLogger
 from torch import Tensor
 
 from metrics.evaluation_metrics import (
+    PickStats,
     calculate_pick_differences,
-    compute_evaluation_metrics,
-    plot_histogram,
     calculate_precision_recall_f1,
+    get_f1_optimal_metrics,
+    plot_histogram,
     plot_precision_recall_f1,
-    calculate_roc_auc,
-    plot_roc_curve
+    plot_roc_curve,
 )
 
 if TYPE_CHECKING:
     from mlflow.tracking.client import MlflowClient
 
+SAMPLING_RATE = 100.0
+
+
+class CollectedStats:
+    stats: dict[str, list[PickStats]] = defaultdict(list)
+
+    def get_stats(self, phase: str) -> PickStats:
+        if phase not in self.stats:
+            raise ValueError(f"No stats collected for phase {phase}")
+        stats = self.stats[phase]
+        return PickStats(
+            predicted_samples=np.concatenate([s.predicted_samples for s in stats]),
+            labeled_samples=np.concatenate([s.labeled_samples for s in stats]),
+            predicted_certainty=np.concatenate([s.predicted_certainty for s in stats]),
+            noise_max=np.concatenate([s.noise_max for s in stats]),
+        )
+
+    def add(self, new_stats: dict[str, PickStats]) -> None:
+        for phase, stat in new_stats.items():
+            self.stats[phase].append(stat)
+
+    def clear(self) -> None:
+        self.stats.clear()
+
 
 class EvaluationMetrics(Callback):
     scores: list[float]
 
-    p_picks_labels: list[np.ndarray]
-    p_picks_predictions: list[np.ndarray]
-    s_picks_labels: list[np.ndarray]
-    s_pick_predictions: list[np.ndarray]
-    p_prob: list[np.ndarray]
-    s_prob: list[np.ndarray]
-    p_labels_binary: list[np.ndarray]
-    s_labels_binary: list[np.ndarray]
+    stats: CollectedStats
 
     mlflow_logger: MLFlowLogger
     experiment: MlflowClient
@@ -42,14 +58,7 @@ class EvaluationMetrics(Callback):
     def __init__(self, mlflow: MLFlowLogger) -> None:
         self.scores = []
 
-        self.p_picks_labels = []
-        self.p_picks_predictions = []
-        self.s_picks_labels = []
-        self.s_pick_predictions = []
-        self.p_prob = []
-        self.s_prob = []
-        self.p_labels_binary = []
-        self.s_labels_binary = []
+        self.stats = CollectedStats()
         self.mlflow_logger = mlflow
         self.experiment = mlflow.experiment
         super().__init__()
@@ -57,12 +66,6 @@ class EvaluationMetrics(Callback):
     def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         # Save the model
         ...
-
-    def get_picks(self, phase: str) -> tuple[list[np.ndarray], list[np.ndarray]]:
-        if phase == "P":
-            return self.p_picks_predictions, self.p_picks_labels, self.p_prob, self.p_labels_binary
-        else:
-            return self.s_pick_predictions, self.s_picks_labels, self.s_prob, self.s_labels_binary
 
     def on_validation_start(
         self,
@@ -78,21 +81,14 @@ class EvaluationMetrics(Callback):
         pl_module: LightningModule,
     ) -> None:
         for phase in ("P", "S"):
-            predictions, labels, probs, label_binary = self.get_picks(phase)
-            if not predictions or not labels:
+            pick_stats = self.stats.get_stats(phase)
+            if not pick_stats.n_samples:
                 print(f"No {phase} picks to log.")
                 continue
 
-            stats = compute_evaluation_metrics(
-                predicted=np.concatenate(predictions),
-                label=np.concatenate(labels),
-                sampling_rate=100.0,
-            )
-
             figure_hist = plot_histogram(
-                predicted=np.concatenate(predictions).ravel(),
-                label=np.concatenate(labels).ravel(),
-                stats=stats,
+                stats=pick_stats,
+                sampling_rate=SAMPLING_RATE,
                 title=f"{phase}-Pick Differences - Epoch {trainer.current_epoch}",
             )
 
@@ -103,73 +99,69 @@ class EvaluationMetrics(Callback):
             )
             print("Logged histogram for phase", phase)
 
-            metric_results = calculate_precision_recall_f1(offset= stats.offsets, final_prob=np.concatenate(probs).ravel())
-            figure_precision_recall_f1 = plot_precision_recall_f1(metric_results,
-                                     title=f"{phase}-Precision, Recall and F1 Score - Epoch {trainer.current_epoch}")
+            metric_results = calculate_precision_recall_f1(stats=pick_stats)
+
+            figure_precision_recall_f1 = plot_precision_recall_f1(
+                metric_results,
+                title=f"{phase}-Precision, Recall and F1 Score "
+                f"- Epoch {trainer.current_epoch}",
+            )
             self.experiment.log_figure(
                 self.mlflow_logger.run_id,
                 figure_precision_recall_f1,
-                f"precision_recall_f1_plots/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
+                f"precision_recall_f1_plots/"
+                f"{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
             )
 
             print("Logged Metrics for phase", phase)
 
-            tpr, fpr, auc = calculate_roc_auc(offset= stats.offsets, final_prob=np.concatenate(probs).ravel(), label_binary=np.concatenate(label_binary).ravel())
-            figure_roc = plot_roc_curve(tpr, fpr, auc,  title=f"ROC Curve for {phase}-wave Picks - Epoch {trainer.current_epoch}")
+            figure_roc = plot_roc_curve(
+                stats=pick_stats,
+                title=f"ROC Curve for {phase}-wave Picks - Epoch {trainer.current_epoch}",
+            )
             self.experiment.log_figure(
-                            self.mlflow_logger.run_id,
-                            figure_roc,
-                            f"roc_curve_plot/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
-                        )
+                self.mlflow_logger.run_id,
+                figure_roc,
+                f"roc_curve_plot/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
+            )
             print("Logged ROC Curve for phase", phase)
+            optimal_detection_metrics = get_f1_optimal_metrics(metric_results)
+
+            sr = SAMPLING_RATE
             self.mlflow_logger.log_metrics(
                 {
-                    f"{phase}_mean_difference": stats.mean_difference,
-                    f"{phase}_median_difference": stats.median_difference,
-                    f"{phase}_mean_abs_error": stats.mean_abs_error,
-                    f"{phase}_rms_error": stats.rms_error,
-                    f"{phase}_precision": metric_results[0.6]["precision"],
-                    f"{phase}_recall": metric_results[0.6]["recall"],
-                    f"{phase}_f1_score": metric_results[0.6]["f1"],
-                    f"{phase}_auc": auc
-
+                    f"{phase}_mean_difference": pick_stats.mean_difference / sr,
+                    f"{phase}_median_difference": pick_stats.median_difference / sr,
+                    f"{phase}_mean_abs_error": pick_stats.mean_abs_error / sr,
+                    f"{phase}_rms_error": pick_stats.rms_error / sr,
+                    f"{phase}_precision": optimal_detection_metrics.precision,
+                    f"{phase}_recall": optimal_detection_metrics.recall,
+                    f"{phase}_f1_score": optimal_detection_metrics.f1_score,
+                    f"{phase}_optimal_threshold": optimal_detection_metrics.threshold,
+                    f"{phase}_auc": pick_stats.auc,
                 },
                 step=trainer.global_step,
             )
 
-        self.p_picks_labels.clear()
-        self.p_picks_predictions.clear()
-        self.s_picks_labels.clear()
-        self.s_pick_predictions.clear()
-        self.p_prob.clear()
-        self.s_prob.clear()
-        self.p_labels_binary.clear()
-        self.s_labels_binary.clear()
+        self.stats.clear()
+        plt.close("all")
 
-
-        
     def on_validation_batch_end(
         self,
         trainer: Trainer,
         pl_module: LightningModule,
-        outputs: Tensor,
+        outputs: tuple[Tensor, Tensor],
         batch: dict[Literal["X", "y"], Tensor],
         batch_idx: int,
         dataloader_idx: int = 0,
     ) -> None:
-
-
-        waveform_data = batch["X"]
         label_data = batch["y"]
-        label_predicted: Tensor = pl_module(waveform_data)
-        # print(outputs.shape)
+        # waveform_data = batch["X"]
+        # label_predicted: Tensor = pl_module(waveform_data)
+        _, label_predicted = outputs
         # print(label_predicted.shape)
         # print(outputs)
         # print(label_predicted)
-
-        torch.save(waveform_data.cpu(), "data/example_waveform.pt")
-        torch.save(label_data.cpu(), "data/example_labels.pt")
-        torch.save(label_predicted.cpu(), "data/example_predictions.pt")
 
         # p_differences, s_differences = get_pick_differences(label_data, label_predicted)
 
@@ -182,20 +174,10 @@ class EvaluationMetrics(Callback):
         # torch.save(label_data, "example_labels.pt")
         # torch.save(waveform_data, "example_waveform.pt")
         # torch.save(label_predicted, "example_predictions.pt")
-        p_predicted, p_labels, s_predicted, s_labels, p_prob, s_prob, p_labels_binary, s_labels_binary = calculate_pick_differences(
-            label_predicted.cpu(), label_data.cpu(), window_width=500
+        stats = calculate_pick_differences(
+            label_predicted.cpu(),
+            label_data.cpu(),
+            window_width=200,
         )
 
-        self.p_picks_predictions.append(p_predicted)
-        self.p_picks_labels.append(p_labels)
-
-        self.s_pick_predictions.append(s_predicted)
-        self.s_picks_labels.append(s_labels)
-
-        self.p_prob.append(p_prob)
-        self.s_prob.append(s_prob)
-
-
-        self.p_labels_binary.append(p_labels_binary)
-        self.s_labels_binary.append(s_labels_binary)
-
+        self.stats.add(stats)

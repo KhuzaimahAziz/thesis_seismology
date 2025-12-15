@@ -1,10 +1,7 @@
-import logging
-
 import numpy as np
 import pytorch_lightning as pl
 import seisbench.generate as sbg
 import seisbench.models as sbm
-import hydra
 import torch
 
 phase_dict = {
@@ -49,8 +46,7 @@ class SeisBenchLit(pl.LightningModule):
         self,
         lr,
         sigma,
-        transfer_learning: str = None,
-        pretrained_model_name: str = None,
+        pretrained_model_name: str = "",
         sample_boundaries=(None, None),
         optimizer_params=None,
         **kwargs,
@@ -62,9 +58,9 @@ class SeisBenchLit(pl.LightningModule):
         self.sample_boundaries = sample_boundaries
         self.optimizer_params = optimizer_params or {}
         self.loss = loss_fn
-        self.transfer_learning = transfer_learning
+
         self.pretrained_model_name = pretrained_model_name
-        if self.transfer_learning == True:
+        if self.pretrained_model_name:
             self.model = sbm.PhaseNet.from_pretrained(
                 self.pretrained_model_name, **kwargs
             )
@@ -75,20 +71,20 @@ class SeisBenchLit(pl.LightningModule):
         return self.model(x)
 
     def shared_step(self, batch):
-        x = batch["X"]
+        x = self.model.annotate_batch_pre(batch["X"], {})
         y_true = batch["y"]
         y_pred = self.model(x)
-        return self.loss(y_pred, y_true)
+        return self.loss(y_pred, y_true), y_pred
 
     def training_step(self, batch, batch_idx):
-        loss = self.shared_step(batch)
+        loss, _ = self.shared_step(batch)
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self.shared_step(batch)
+        loss, y_pred = self.shared_step(batch)
         self.log("val_loss", loss, prog_bar=True)
-        return loss
+        return loss, y_pred
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_params)
@@ -118,7 +114,9 @@ class SeisBenchLit(pl.LightningModule):
             sbg.ChangeDtype(np.float32),
             sbg.Normalize(demean_axis=-1, amp_norm_axis=-1, amp_norm_type="peak"),
             sbg.ProbabilisticLabeller(
-                label_columns=phase_dict, sigma=self.sigma, dim=0,
+                label_columns=phase_dict,
+                sigma=self.sigma,
+                dim=0,
             ),
         ]
 
