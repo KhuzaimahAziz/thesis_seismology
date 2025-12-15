@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Literal, NamedTuple
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
-from scipy import ndimage
-
 from sklearn import metrics
 
 if TYPE_CHECKING:
@@ -20,13 +18,73 @@ ORDER_MAP: dict[ComponentOrder, tuple[int, int]] = {
 }
 
 
+class PickStats(NamedTuple):
+    predicted_samples: np.ndarray
+    labeled_samples: np.ndarray
+    predicted_certainty: np.ndarray
+    noise_max: np.ndarray
+
+    @property
+    def n_samples(self) -> int:
+        return self.predicted_samples.size
+
+    @property
+    def offset_samples(self) -> np.ndarray:
+        return self.predicted_samples - self.labeled_samples
+
+    @property
+    def mean_difference(self) -> float:
+        return float(np.nanmean(self.offset_samples))
+
+    @property
+    def median_difference(self) -> float:
+        return float(np.nanmedian(self.offset_samples))
+
+    @property
+    def mean_abs_error(self) -> float:
+        return float(np.nanmean(np.abs(self.offset_samples)))
+
+    @property
+    def rms_error(self) -> float:
+        return float(np.sqrt(np.nanmean(self.offset_samples**2)))
+
+    @property
+    def true_labels(self) -> np.ndarray:
+        pick_examples = np.ones((~np.isnan(self.labeled_samples)).sum(), dtype=bool)
+        noise_example = np.zeros(self.noise_max.size, dtype=bool)
+        return np.concatenate([pick_examples, noise_example])
+
+    @property
+    def predicted_scores(self) -> np.ndarray:
+        pick_score = self.predicted_certainty[~np.isnan(self.labeled_samples)]
+        noise_score = self.noise_max
+        return np.concatenate([pick_score, noise_score])
+
+    @property
+    def roc_curve(self) -> tuple[np.ndarray, np.ndarray]:
+        fpr, tpr, _ = metrics.roc_curve(self.true_labels, self.predicted_scores)
+        return fpr, tpr
+
+    @property
+    def auc(self) -> float:
+        fpr, tpr = self.roc_curve
+        return metrics.auc(fpr, tpr)
+
+
+class DetectionMetrics(NamedTuple):
+    threshold: float
+    precision: float
+    recall: float
+    f1_score: float
+
+
 def calculate_pick_differences(
     predictions: torch.Tensor,
     labels: torch.Tensor,
     order: ComponentOrder = "PSN",
-    min_pick_height: float = 0.3,
     window_width: int = 500,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    edge_mask: int = 100,
+) -> dict[str, PickStats]:
     """Get predicted and labeled pick sample indices for P and S waves.
 
     Args:
@@ -36,8 +94,6 @@ def calculate_pick_differences(
             (batch, components, samples).
         order (ComponentOrder, optional): Order of components in the predictions/labels.
             Defaults to "PSN".
-        min_pick_height (float, optional): Minimum probability height to consider
-            a pick valid. Defaults to 0.2.
         window_width (int, optional): Width of the window to expand the label picks.
             Defaults to 500.
     Returns:
@@ -48,58 +104,79 @@ def calculate_pick_differences(
 
     # Mask out predictions outside of labeled pick regions
     if window_width:
-        epsilon = 1e-10
-        labels_numpy = labels.detach().numpy()
-        labels_numpy[labels_numpy < epsilon] = 0.0
+        # TODO: Use signal.argrelmax to find multiple picks if needed
+        _, label_pick_sample = labels.max(dim=2)
+        mask = torch.zeros_like(labels, dtype=torch.bool)
+        # Set all pick sampple locations to True
+        for batch_idx in range(labels.shape[0]):
+            for comp_idx in range(labels.shape[1]):
+                pick_sample = label_pick_sample[batch_idx, comp_idx]
+                window_start = max(pick_sample - window_width, 0)
+                window_end = min(pick_sample + window_width, labels.shape[2])
+                mask[
+                    batch_idx,
+                    comp_idx,
+                    window_start:window_end,
+                ] = True
 
-        window = np.ones(window_width)
-        # Expand mask to include neighboring samples
-        mask = ndimage.convolve1d(labels_numpy, window, axis=2, mode="constant")
-        mask[mask < epsilon] = 0.0
-        predictions_masked = predictions * torch.from_numpy(mask.astype(bool))
+        predictions_masked = predictions * mask
     else:
         predictions_masked = predictions
 
     # predictions_masked = predictions
+    # This assumes there is only one pick per component per trace
+    # TODO: Use signal.argrelmax to find multiple picks if needed
     prediction_max, prediction_pick_sample = predictions_masked.max(dim=2)
     p_idx, s_idx = ORDER_MAP[order]
 
     p_mask = label_max[:, p_idx].to(bool)
     s_mask = label_max[:, s_idx].to(bool)
 
-    p_mask &= prediction_max[:, p_idx] >= min_pick_height
-    s_mask &= prediction_max[:, s_idx] >= min_pick_height
+    p_mask_noise = ~p_mask
+    s_mask_noise = ~s_mask
+    p_mask_noise[:edge_mask] = False
+    p_mask_noise[-edge_mask - 1 :] = False
+    s_mask_noise[:edge_mask] = False
+    s_mask_noise[-edge_mask - 1 :] = False
 
-    p_predicted_sample = prediction_pick_sample[:, p_idx][p_mask]
-    p_labeled_sample = label_pick_sample[:, p_idx][p_mask]
+    p_noise_max, _ = predictions[:, p_idx][p_mask_noise].max(dim=-1)
+    s_noise_max, _ = predictions[:, s_idx][s_mask_noise].max(dim=-1)
 
-    s_predicted_sample = prediction_pick_sample[:, s_idx][s_mask]
-    s_labeled_sample = label_pick_sample[:, s_idx][s_mask]
+    # p_mask &= prediction_max[:, p_idx] >= min_pick_height
+    # s_mask &= prediction_max[:, s_idx] >= min_pick_height
+
+    p_predicted_sample = prediction_pick_sample[:, p_idx][p_mask].type(torch.float32)
+    p_labeled_sample = label_pick_sample[:, p_idx][p_mask].type(torch.float32)
+    s_predicted_sample = prediction_pick_sample[:, s_idx][s_mask].type(torch.float32)
+    s_labeled_sample = label_pick_sample[:, s_idx][s_mask].type(torch.float32)
+
+    # If there is no pick or at the edges, set to NaN
+    s_labeled_sample[s_labeled_sample == 0.0] = torch.nan
+    p_labeled_sample[p_labeled_sample == 0.0] = torch.nan
+    s_labeled_sample[s_labeled_sample == labels.shape[2] - 1] = torch.nan
+    p_labeled_sample[p_labeled_sample == labels.shape[2] - 1] = torch.nan
 
     p_prob = prediction_max[:, p_idx][p_mask]
     s_prob = prediction_max[:, s_idx][s_mask]
 
-    label_pick_class = label_max.argmax(dim=1) 
-    p_labels_binary = label_pick_class[p_mask]
-    s_labels_binary = label_pick_class[s_mask]  
-
-    
-    return (
-        p_predicted_sample.detach().numpy(),
-        p_labeled_sample.detach().numpy(),
-        s_predicted_sample.detach().numpy(),
-        s_labeled_sample.detach().numpy(),
-        p_prob.detach().numpy(),
-        s_prob.detach().numpy(),
-        p_labels_binary.detach().numpy(),
-        s_labels_binary.detach().numpy(),   
-    )
+    return {
+        "P": PickStats(
+            predicted_samples=p_predicted_sample.detach().numpy(),
+            labeled_samples=p_labeled_sample.detach().numpy(),
+            predicted_certainty=p_prob.detach().numpy(),
+            noise_max=p_noise_max.detach().numpy(),
+        ),
+        "S": PickStats(
+            predicted_samples=s_predicted_sample.detach().numpy(),
+            labeled_samples=s_labeled_sample.detach().numpy(),
+            predicted_certainty=s_prob.detach().numpy(),
+            noise_max=s_noise_max.detach().numpy(),
+        ),
+    }
 
 
 def plot_histogram(
-    predicted: np.ndarray,
-    label: np.ndarray,
-    stats: tuple,
+    stats: PickStats,
     time_window_limit: float = 1.0,
     sampling_rate: float = 100.0,
     title: str = "",
@@ -107,7 +184,8 @@ def plot_histogram(
 ) -> Figure | None:
     fig = plt.figure()
     ax = fig.gca()
-    offsets = (predicted - label) / sampling_rate  # in seconds
+    offsets = stats.offset_samples / sampling_rate
+    offsets = offsets[~np.isnan(offsets)]
     ax.hist(
         offsets,
         bins=100,
@@ -119,31 +197,33 @@ def plot_histogram(
     ax.set_ylabel("Count")
     ax.grid(alpha=0.3)
 
+    # percentage
     fraction_outside_window = (
         np.sum(np.abs(offsets) > time_window_limit) / offsets.size * 100.0
-    )  # percentage
+    )
 
     ax.axvline(
-        stats.mean_difference,
+        stats.mean_difference / sampling_rate,
         color="green",
         linestyle="dashed",
         label="Mean difference",
     )
     ax.axvline(
-        stats.median_difference,
+        stats.median_difference / sampling_rate,
         color="orange",
         linestyle="dashed",
         label="Median difference",
     )
     ax.set_title(title)
 
+    sr = sampling_rate
     ax.text(
         0.02,
         0.98,
-        f"Median difference: {stats.median_difference:.3f} s\n"
-        f"Mean difference: {stats.mean_difference:.3f} s\n"
-        f"MAE: {stats.mean_abs_error:.3f} s\n"
-        f"RMS error: {stats.rms_error:.3f} s\n"
+        f"Median difference: {stats.median_difference / sr:.3f} s\n"
+        f"Mean difference: {stats.mean_difference / sr:.3f} s\n"
+        f"MAE: {stats.mean_abs_error / sr:.3f} s\n"
+        f"RMS error: {stats.rms_error / sr:.3f} s\n"
         f"Total picks: {offsets.size}\n"
         f"Outside ±{time_window_limit}s: {fraction_outside_window:.0f}%",
         transform=ax.transAxes,
@@ -157,7 +237,11 @@ def plot_histogram(
         plt.show()
     return fig
 
-def calculate_precision_recall_f1(offset: torch.Tensor, final_prob: torch.Tensor, time_tolerance=0.1) -> dict:
+
+def calculate_precision_recall_f1(
+    stats: PickStats,
+    thresholds: np.ndarray | None = None,
+) -> list[DetectionMetrics]:
     """Get offset of P and S waves and their corresponding predicted probabilities.
 
     Args:
@@ -166,27 +250,49 @@ def calculate_precision_recall_f1(offset: torch.Tensor, final_prob: torch.Tensor
         time_tolerance (float): Time tolerance mask for offset. Defaults to 0.1.
     Returns:
         dict: Dictionary containing precision, recall, and f1 scores at different thresholds.
-        
+
     """
-    thresholds = np.linspace(0, 1, 6)
-    thresholds = np.round(thresholds, 2)
-    results = {}
+    thresholds = np.linspace(0.0, 1.0, 41)[1:] if thresholds is None else thresholds
+    results = []
 
-    for t in thresholds:
-        pred_mask = (final_prob >= t)
-        TP = (pred_mask & (offset <= time_tolerance)).sum().item()
-        FP = (pred_mask & (offset > time_tolerance)).sum().item()
-        FN = (~pred_mask).sum().item()
+    for thres in thresholds:
+        pred_mask = stats.predicted_scores >= thres
+        TP = pred_mask[stats.true_labels].sum()
+        FP = pred_mask[~stats.true_labels].sum()
+        FN = (~pred_mask[stats.true_labels]).sum()
 
-        precision = TP / (TP + FP + 1e-9)
-        recall    = TP / (TP + FN + 1e-9)
-        f1        = 2 * precision * recall / (precision + recall + 1e-9)
+        precision = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        f1_score = 2 * precision * recall / (precision + recall)
 
-        results[t] = {"precision": precision, "recall": recall, "f1": f1}
+        res = DetectionMetrics(
+            threshold=thres,
+            precision=precision,
+            recall=recall,
+            f1_score=f1_score,
+        )
+
+        results.append(res)
 
     return results
 
-def plot_precision_recall_f1(metrics_dict: dict, title):
+
+def get_f1_optimal_metrics(
+    detection_metrics: list[DetectionMetrics],
+) -> DetectionMetrics:
+    """Get the detection metrics at the optimal F1 score.
+
+    Args:
+        detection_metrics (list[DetectionMetrics]): List of DetectionMetrics.
+    Returns:
+        DetectionMetrics: DetectionMetrics at the optimal F1 score.
+    """
+    f1_scores = [d.f1_score for d in detection_metrics]
+    max_index = np.nanargmax(f1_scores)
+    return detection_metrics[max_index]
+
+
+def plot_precision_recall_f1(detection_metrics: list[DetectionMetrics], title: str):
     """Takes the Metrics dict containing Precision, Recall and F1_score.
 
     Args:
@@ -194,127 +300,67 @@ def plot_precision_recall_f1(metrics_dict: dict, title):
     Returns:
         fig: Matplotlib figure object for further use.
     """
-    thresholds = list(metrics_dict.keys())
-    precision_list = [metrics_dict[t]["precision"] for t in thresholds]
-    recall_list    = [metrics_dict[t]["recall"] for t in thresholds]
-    f1_list        = [metrics_dict[t]["f1"] for t in thresholds]
+    thresholds = [d.threshold for d in detection_metrics]
+    precision = [d.precision for d in detection_metrics]
+    recall = [d.recall for d in detection_metrics]
+    f1_score = [d.f1_score for d in detection_metrics]
 
-    fig, ax = plt.subplots(figsize=(8,6))
+    fig, ax = plt.subplots(figsize=(8, 6))
 
-    # Get values at threshold 0.60 for legend
-    if 0.60 in thresholds:
-        idx = thresholds.index(0.60)
-        prec_val = precision_list[idx]
-        rec_val  = recall_list[idx]
-        f1_val   = f1_list[idx]
-    else:
-        prec_val = rec_val = f1_val = None
+    ax.plot(
+        thresholds,
+        precision,
+        label="Precision",
+        linewidth=2,
+        color="blue",
+    )
+    ax.plot(
+        thresholds,
+        recall,
+        label="Recall",
+        linewidth=2,
+        color="orange",
+    )
+    ax.plot(
+        thresholds,
+        f1_score,
+        label="F1 Score",
+        linewidth=2,
+        color="green",
+    )
 
-    ax.plot(thresholds, precision_list, label=f"Precision ({prec_val:.2f})" if prec_val else "Precision", linewidth=2, color='blue')
-    ax.plot(thresholds, recall_list, label=f"Recall ({rec_val:.2f})" if rec_val else "Recall", linewidth=2, color='orange')
-    ax.plot(thresholds, f1_list, label=f"F1 Score ({f1_val:.2f})" if f1_val else "F1 Score", linewidth=2, color='green')
-    
-    # Mark threshold = 0.60 with a red star
-    if 0.60 in thresholds:
-        ax.scatter(thresholds[idx], precision_list[idx], color='blue', s=100, marker='*')
-        ax.scatter(thresholds[idx], recall_list[idx], color='orange', s=100, marker='*')
-        ax.scatter(thresholds[idx], f1_list[idx], color='green', s=100, marker='*')
+    ax.grid(alpha=0.3)
 
-    ax.set_xlabel("Threshold", fontsize=14)
-    ax.set_ylabel("Metric Score", fontsize=14)
-    ax.set_title(title, fontsize=16)
-    ax.legend(loc='upper left', bbox_to_anchor=(1,1))
+    ax.set_xlabel("Threshold")
+    ax.set_ylabel("Metric Score")
+    ax.set_title(title)
+    ax.legend(loc="lower left")
     fig.tight_layout()
-    plt.show()
 
     return fig
 
 
-def calculate_roc_auc(offset: np.ndarray, final_prob: np.ndarray, label_binary:np.ndarray, phase: str, time_tolerance=0.1):
-    """Calculate ROC AUC score based on offset and predicted probabilities.
-
-    Args:
-        offset (torch.Tensor): Offset values of picks.
-        final_prob (torch.Tensor): Predicted probabilities.
-        time_tolerance (float): Time tolerance for considering a pick as true p
-        ositive.
-
-    Returns:
-        float: ROC AUC score.
-    """
-    
-    y_true_mask = (offset <= time_tolerance)
-    if phase == 'P':
-        phase_label = (label_binary[y_true_mask]==0)
-    else:
-        phase_label = (label_binary[y_true_mask]==1)
-    final_prob_masked = final_prob[y_true_mask]
-    
-    print(phase_label)
-    tpr, fpr, thresholds = metrics.roc_curve(phase_label,
-                                 final_prob_masked)
-    
-    roc_auc = metrics.auc(fpr, tpr)
-
-    return tpr, fpr, roc_auc
-
 def plot_roc_curve(
-    tpr: np.ndarray,
-    fpr: np.ndarray,
-    auc: float,
+    stats: PickStats,
     title: str,
 ) -> Figure:
     fig, ax = plt.subplots(figsize=(10, 6))
+    fpr, tpr = stats.roc_curve
+    auc = stats.auc
+
     ax.plot(fpr, tpr, linewidth=3, label=f"AUC = {auc:.3f}")
 
     ax.plot([0, 1], [0, 1], "--", color="gray", linewidth=1)
 
-    ax.set_title(title, fontsize=16)
-    ax.set_xlabel("False Positive Rate", fontsize=14)
-    ax.set_ylabel("True Positive Rate", fontsize=14)
+    ax.set_title(title)
+    ax.set_xlabel("False Positive Rate")
+    ax.set_ylabel("True Positive Rate")
 
-    ax.tick_params(labelsize=12)
     ax.grid(alpha=0.3)
-
-    ax.legend(
-        fontsize=9,
-        loc="center left",
-        bbox_to_anchor=(1.02, 0.5),
-        borderpad=1,
-    )
+    ax.set_xlim(0.0, 1.0)
+    ax.set_ylim(0.0, 1.0)
+    ax.set_aspect("equal")
+    ax.legend(loc="lower right")
 
     fig.tight_layout()
     return fig
-
-class EvaluationMetrics(NamedTuple):
-    mean_difference: float
-    median_difference: float
-    mean_abs_error: float
-    rms_error: float
-    offsets: np.ndarray 
-
-
-def compute_evaluation_metrics(
-    predicted: np.ndarray,
-    label: np.ndarray,
-    sampling_rate: float = 100.0,
-) -> EvaluationMetrics:
-    """Compute evaluation metrics for pick time differences.
-
-    Args:
-        predicted (np.ndarray): Predicted pick sample indices.
-        label (np.ndarray): Labeled pick sample indices.
-        sampling_rate (float, optional): Sampling rate of the data. Defaults to 100.0.
-
-    Returns:
-        EvaluationMetrics: Named tuple containing evaluation metrics.
-    """
-    offsets = (predicted - label) / sampling_rate  
-
-    return EvaluationMetrics(
-        mean_difference=float(np.mean(offsets)),
-        median_difference=float(np.median(offsets)),
-        mean_abs_error=float(np.mean(np.abs(offsets))),
-        rms_error=float(np.sqrt(np.mean(offsets**2))),
-        offsets=offsets,
-    ) 
