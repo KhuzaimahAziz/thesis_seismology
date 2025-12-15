@@ -10,7 +10,7 @@ PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for se
   * Augmentations (probabilitic_labeller, normalize, randow_window)
   * Training (lr, epochs, batch_size, n_workers, optimizer)
   * Model (model_name)
-  * 
+    
 * **Reproducible experiments** with Hydra logging and config saving
   
 * **MLflow Pipeline** for evaluation and saving best model.
@@ -21,6 +21,7 @@ PhasePicker is a fully **configurable, Hydra and Mlflow driven pipeline** for se
 
 
   
+
 
 
 
