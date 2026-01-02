@@ -1,6 +1,6 @@
-import numpy as np
+from pathlib import Path
+
 import pytorch_lightning as pl
-import seisbench.generate as sbg
 import seisbench.models as sbm
 import torch
 
@@ -42,30 +42,34 @@ def loss_fn(y_pred, y_true, eps=1e-5):
 
 
 class SeisBenchLit(pl.LightningModule):
+    model: sbm.PhaseNet
+
     def __init__(
         self,
-        lr,
-        sigma,
+        dataset_name: str,
         pretrained_model_name: str = "",
         sample_boundaries=(None, None),
         optimizer_params=None,
-        **kwargs,
     ):
         super().__init__()
         self.save_hyperparameters()
-        self.lr = lr
-        self.sigma = sigma
         self.sample_boundaries = sample_boundaries
         self.optimizer_params = optimizer_params or {}
-        self.loss = loss_fn
 
         self.pretrained_model_name = pretrained_model_name
         if self.pretrained_model_name:
-            self.model = sbm.PhaseNet.from_pretrained(
-                self.pretrained_model_name, **kwargs
-            )
+            print(f"Loading pretrained model: {self.pretrained_model_name}")
+            self.model = sbm.PhaseNet.from_pretrained(self.pretrained_model_name)
         else:
-            self.model = sbm.PhaseNet(**kwargs)
+            self.model = sbm.PhaseNet()
+
+        self.model_name = f"{self.model.__class__.__name__}-{dataset_name}"
+        if self.pretrained_model_name:
+            self.model_name += f"-from-{self.pretrained_model_name}"
+
+    @property
+    def label_order(self) -> str:
+        return self.model.labels
 
     def forward(self, x):
         return self.model(x)
@@ -74,7 +78,7 @@ class SeisBenchLit(pl.LightningModule):
         x = self.model.annotate_batch_pre(batch["X"], {})
         y_true = batch["y"]
         y_pred = self.model(x)
-        return self.loss(y_pred, y_true), y_pred
+        return loss_fn(y_pred, y_true), y_pred
 
     def training_step(self, batch, batch_idx):
         loss, _ = self.shared_step(batch)
@@ -90,35 +94,8 @@ class SeisBenchLit(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_params)
         return optimizer
 
-    def get_augmentations(self):
-        return [
-            sbg.OneOf(
-                [
-                    sbg.WindowAroundSample(
-                        list(phase_dict.keys()),
-                        samples_before=3000,
-                        windowlen=6000,
-                        selection="random",
-                        strategy="variable",
-                    ),
-                    sbg.NullAugmentation(),
-                ],
-                probabilities=[2, 1],
-            ),
-            sbg.RandomWindow(
-                low=self.sample_boundaries[0],
-                high=self.sample_boundaries[1],
-                windowlen=3001,
-                strategy="pad",
-            ),
-            sbg.ChangeDtype(np.float32),
-            sbg.Normalize(demean_axis=-1, amp_norm_axis=-1, amp_norm_type="peak"),
-            sbg.ProbabilisticLabeller(
-                label_columns=phase_dict,
-                sigma=self.sigma,
-                dim=0,
-            ),
-        ]
+    def save_model(self, path: str | Path):
+        return self.model.save(path)
 
     def predict_step(self, batch, batch_idx=None, dataloader_idx=None):
         x = batch["X"]

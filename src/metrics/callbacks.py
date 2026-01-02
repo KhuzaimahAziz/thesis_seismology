@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, Literal
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
+import mlflow
 import numpy as np
 from matplotlib import pyplot as plt
+from mlflow.system_metrics.system_metrics_monitor import SystemMetricsMonitor
 from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.loggers import MLFlowLogger
 from torch import Tensor
@@ -18,11 +22,14 @@ from metrics.evaluation_metrics import (
     plot_precision_recall_f1,
     plot_roc_curve,
 )
+from seisbench_training.utils.model_utils import SeisBenchLit
 
 if TYPE_CHECKING:
     from mlflow.tracking.client import MlflowClient
 
 SAMPLING_RATE = 100.0
+
+mlflow.enable_system_metrics_logging()
 
 
 class CollectedStats:
@@ -47,13 +54,21 @@ class CollectedStats:
         self.stats.clear()
 
 
+class BestModel(NamedTuple):
+    model: SeisBenchLit
+    loss: float
+
+
 class EvaluationMetrics(Callback):
     scores: list[float]
+    system_monitor: SystemMetricsMonitor
 
     stats: CollectedStats
 
     mlflow_logger: MLFlowLogger
     experiment: MlflowClient
+
+    best_model: BestModel | None = None
 
     def __init__(self, mlflow: MLFlowLogger) -> None:
         self.scores = []
@@ -63,9 +78,26 @@ class EvaluationMetrics(Callback):
         self.experiment = mlflow.experiment
         super().__init__()
 
-    def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        # Save the model
-        ...
+    def on_fit_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        self.system_monitor = SystemMetricsMonitor(run_id=self.mlflow_logger.run_id)
+        self.system_monitor.start()
+
+    def on_fit_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+        if self.system_monitor:
+            self.system_monitor.finish()
+
+    def on_train_end(self, trainer: Trainer, pl_module: SeisBenchLit) -> None:
+        if self.best_model:
+            with TemporaryDirectory() as tmpdir:
+                model = self.best_model.model
+
+                model_dir = Path(tmpdir) / "best_model"
+                model_dir.mkdir()
+                model.save_model(model_dir / model.model_name)
+                self.experiment.log_artifact(
+                    self.mlflow_logger.run_id,
+                    model_dir,
+                )
 
     def on_validation_start(
         self,
@@ -146,27 +178,40 @@ class EvaluationMetrics(Callback):
         self.stats.clear()
         plt.close("all")
 
+        self.store_model(trainer, pl_module)  # type: ignore
+
+    def store_model(self, trainer: Trainer, pl_module: SeisBenchLit) -> None:
+        callback_metrics = trainer.callback_metrics
+
+        if self.best_model is None:
+            self.best_model = BestModel(
+                model=pl_module,
+                loss=callback_metrics["val_loss"].item(),
+            )
+            return
+
+        current_loss = float(callback_metrics["val_loss"])
+        if current_loss < self.best_model.loss:
+            print(
+                f"New best model found with val_loss: {current_loss:.4f} "
+                f"(previous: {self.best_model.loss:.4f})"
+            )
+            self.best_model = BestModel(
+                model=pl_module,
+                loss=current_loss,
+            )
+
     def on_validation_batch_end(
         self,
         trainer: Trainer,
-        pl_module: LightningModule,
+        pl_module: SeisBenchLit,
         outputs: tuple[Tensor, Tensor],
         batch: dict[Literal["X", "y"], Tensor],
         batch_idx: int,
         dataloader_idx: int = 0,
     ) -> None:
         label_data = batch["y"]
-        # waveform_data = batch["X"]
-        # label_predicted: Tensor = pl_module(waveform_data)
         _, label_predicted = outputs
-        # print(label_predicted.shape)
-        # print(outputs)
-        # print(label_predicted)
-
-        # p_differences, s_differences = get_pick_differences(label_data, label_predicted)
-
-        # self.p_pick_differences.append(p_differences)
-        # self.s_pick_differences.append(s_differences)
 
         # Debug below
         # for key, value in batch.items():
@@ -178,6 +223,6 @@ class EvaluationMetrics(Callback):
             label_predicted.cpu(),
             label_data.cpu(),
             window_width=200,
+            label_order=pl_module.label_order,
         )
-
         self.stats.add(stats)

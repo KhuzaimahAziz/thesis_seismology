@@ -81,7 +81,7 @@ class DetectionMetrics(NamedTuple):
 def calculate_pick_differences(
     predictions: torch.Tensor,
     labels: torch.Tensor,
-    order: ComponentOrder = "PSN",
+    label_order: ComponentOrder = "PSN",
     window_width: int = 500,
     edge_mask: int = 100,
 ) -> dict[str, PickStats]:
@@ -127,7 +127,7 @@ def calculate_pick_differences(
     # This assumes there is only one pick per component per trace
     # TODO: Use signal.argrelmax to find multiple picks if needed
     prediction_max, prediction_pick_sample = predictions_masked.max(dim=2)
-    p_idx, s_idx = ORDER_MAP[order]
+    p_idx, s_idx = ORDER_MAP[label_order]
 
     p_mask = label_max[:, p_idx].to(bool)
     s_mask = label_max[:, s_idx].to(bool)

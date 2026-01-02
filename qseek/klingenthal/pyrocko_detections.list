@@ -1,0 +1,1525 @@
+%YAML 1.1
+--- !pf.Event
+lat: 50.02071243934834
+lon: 11.9707988434025
+time: '2024-06-01 00:01:50.5'
+depth: 15.396360154117575
+name: '2024-06-01T00:01:50.500000+00:00'
+magnitude: 0.1515282541513443
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 23
+  semblance: 0.1515282541513443
+--- !pf.Event
+lat: 49.95180495484251
+lon: 12.060339084002932
+time: '2024-06-01 00:27:23.109999895'
+depth: 13023.246670006767
+name: '2024-06-01T00:27:23.110000+00:00'
+magnitude: 0.1563289314508438
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.1563289314508438
+--- !pf.Event
+lat: 49.85179644076697
+lon: 12.0050509223307
+time: '2024-06-01 00:59:49.549999952'
+depth: 1665.0659423095976
+name: '2024-06-01T00:59:49.550000+00:00'
+magnitude: 0.10430464893579483
+magnitude_type: 'semblance'
+extras:
+  n_picks: 1
+  n_stations: 26
+  semblance: 0.10430464893579483
+--- !pf.Event
+lat: 49.93332417325802
+lon: 12.073641394782703
+time: '2024-06-01 01:13:57.730000019'
+depth: 13723.3616742856
+name: '2024-06-01T01:13:57.730000+00:00'
+magnitude: 0.13281221687793732
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.13281221687793732
+--- !pf.Event
+lat: 50.54774903526107
+lon: 12.50430563522299
+time: '2024-06-01 01:32:09.00999999'
+depth: 883.4591668992296
+name: '2024-06-01T01:32:09.010000+00:00'
+magnitude: 0.1383129060268402
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.1383129060268402
+--- !pf.Event
+lat: 50.26433341580604
+lon: 12.300960024180059
+time: '2024-06-01 02:26:48.390000105'
+depth: 489.5833333333333
+name: '2024-06-01T02:26:48.390000+00:00'
+magnitude: 0.15597787499427795
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.15597787499427795
+--- !pf.Event
+lat: 49.864016823362704
+lon: 12.147082963793746
+time: '2024-06-01 03:28:54.869999886'
+depth: 2192.371278496123
+name: '2024-06-01T03:28:54.870000+00:00'
+magnitude: 0.14762769639492035
+magnitude_type: 'semblance'
+extras:
+  n_picks: 1
+  n_stations: 26
+  semblance: 0.14762769639492035
+--- !pf.Event
+lat: 49.839215247621276
+lon: 11.9796752339563
+time: '2024-06-01 03:48:00.359999895'
+depth: 11594.078871729409
+name: '2024-06-01T03:48:00.360000+00:00'
+magnitude: 0.1667606234550476
+magnitude_type: 'semblance'
+extras:
+  n_picks: 1
+  n_stations: 26
+  semblance: 0.1667606234550476
+--- !pf.Event
+lat: 49.80991068613717
+lon: 12.18501875421789
+time: '2024-06-01 04:02:21.599999905'
+depth: 289.1781561870532
+name: '2024-06-01T04:02:21.600000+00:00'
+magnitude: 0.1307872086763382
+magnitude_type: 'semblance'
+extras:
+  n_picks: 1
+  n_stations: 25
+  semblance: 0.1307872086763382
+--- !pf.Event
+lat: 49.958058724184355
+lon: 12.051074758507646
+time: '2024-06-01 04:09:39.349999905'
+depth: 881.7587321274741
+name: '2024-06-01T04:09:39.350000+00:00'
+magnitude: 0.14302513003349304
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.14302513003349304
+--- !pf.Event
+lat: 49.824443993811066
+lon: 12.168277515173239
+time: '2024-06-01 04:15:48.00999999'
+depth: 2240.6636565469307
+name: '2024-06-01T04:15:48.010000+00:00'
+magnitude: 0.21386060118675232
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.21386060118675232
+--- !pf.Event
+lat: 50.60764327392419
+lon: 12.687513172767048
+time: '2024-06-01 04:24:45.75'
+depth: 1930.8874242786078
+name: '2024-06-01T04:24:45.750000+00:00'
+magnitude: 0.13119074702262878
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.13119074702262878
+--- !pf.Event
+lat: 49.82728189780436
+lon: 11.913443832497592
+time: '2024-06-01 04:36:31.819999933'
+depth: 2614.5833333333335
+name: '2024-06-01T04:36:31.820000+00:00'
+magnitude: 0.1740226298570633
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.1740226298570633
+--- !pf.Event
+lat: 49.821196343620706
+lon: 12.169861493361783
+time: '2024-06-01 04:48:30.150000095'
+depth: 7489.583333333333
+name: '2024-06-01T04:48:30.150000+00:00'
+magnitude: 0.14033932983875275
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.14033932983875275
+--- !pf.Event
+lat: 50.24555963967713
+lon: 12.322343808086671
+time: '2024-06-01 04:58:32.609999895'
+depth: 101.69906869715899
+name: '2024-06-01T04:58:32.610000+00:00'
+magnitude: 0.2785707712173462
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.2785707712173462
+--- !pf.Event
+lat: 49.79495717085313
+lon: 11.910626112470863
+time: '2024-06-01 05:09:14.630000114'
+depth: 154.78587157672348
+name: '2024-06-01T05:09:14.630000+00:00'
+magnitude: 0.17963409423828125
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.17963409423828125
+--- !pf.Event
+lat: 49.826538540905176
+lon: 12.167113366652266
+time: '2024-06-01 05:09:43.059999943'
+depth: 1322.9166666666665
+name: '2024-06-01T05:09:43.060000+00:00'
+magnitude: 0.1991174966096878
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.1991174966096878
+--- !pf.Event
+lat: 49.873796574870674
+lon: 12.134896784786465
+time: '2024-06-01 05:23:14.24000001'
+depth: 219.6358386265414
+name: '2024-06-01T05:23:14.240000+00:00'
+magnitude: 0.18025913834571838
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.18025913834571838
+--- !pf.Event
+lat: 49.84433956864425
+lon: 11.90904601950195
+time: '2024-06-01 05:32:48.720000029'
+depth: 6416.825639412165
+name: '2024-06-01T05:32:48.720000+00:00'
+magnitude: 0.18466266989707947
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.18466266989707947
+--- !pf.Event
+lat: 50.009538237441824
+lon: 12.069396390232276
+time: '2024-06-01 05:36:38.910000086'
+depth: -10.416666666666664
+name: '2024-06-01T05:36:38.910000+00:00'
+magnitude: 0.19801409542560577
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.19801409542560577
+--- !pf.Event
+lat: 49.88412405352497
+lon: 11.971789531099963
+time: '2024-06-01 05:37:34.74000001'
+depth: 11777.293176245306
+name: '2024-06-01T05:37:34.740000+00:00'
+magnitude: 0.1933143436908722
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.1933143436908722
+--- !pf.Event
+lat: 49.90296110715314
+lon: 12.02854165155296
+time: '2024-06-01 05:39:42.049999952'
+depth: 2506.4339830710283
+name: '2024-06-01T05:39:42.050000+00:00'
+magnitude: 0.22519312798976898
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.22519312798976898
+--- !pf.Event
+lat: 49.84631301154678
+lon: 12.157544389004107
+time: '2024-06-01 06:04:53.859999895'
+depth: 3366.364748717694
+name: '2024-06-01T06:04:53.860000+00:00'
+magnitude: 0.1430208384990692
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.1430208384990692
+--- !pf.Event
+lat: 49.887265413786096
+lon: 12.180449314054101
+time: '2024-06-01 06:16:30.890000105'
+depth: 2130.0500855161135
+name: '2024-06-01T06:16:30.890000+00:00'
+magnitude: 0.1782810539007187
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.1782810539007187
+--- !pf.Event
+lat: 49.87400832097204
+lon: 12.021480771547232
+time: '2024-06-01 06:18:55.470000029'
+depth: 4157.947824916879
+name: '2024-06-01T06:18:55.470000+00:00'
+magnitude: 0.1966627836227417
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.1966627836227417
+--- !pf.Event
+lat: 49.856469549451376
+lon: 12.187754323554985
+time: '2024-06-01 06:24:36.970000029'
+depth: 2419.6420648229255
+name: '2024-06-01T06:24:36.970000+00:00'
+magnitude: 0.23041898012161255
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.23041898012161255
+--- !pf.Event
+lat: 50.21932956803074
+lon: 12.423219424532823
+time: '2024-06-01 07:03:21.430000067'
+depth: -10.416666666666664
+name: '2024-06-01T07:03:21.430000+00:00'
+magnitude: 0.20841385424137115
+magnitude_type: 'semblance'
+extras:
+  n_picks: 5
+  n_stations: 26
+  semblance: 0.20841385424137115
+--- !pf.Event
+lat: 50.61300184622989
+lon: 12.680207746367977
+time: '2024-06-01 07:08:20.859999895'
+depth: -10.416666666666664
+name: '2024-06-01T07:08:20.860000+00:00'
+magnitude: 0.11668568849563599
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.11668568849563599
+--- !pf.Event
+lat: 49.83002134957969
+lon: 12.06030670707392
+time: '2024-06-01 07:37:06.599999905'
+depth: 4712.82430605324
+name: '2024-06-01T07:37:06.600000+00:00'
+magnitude: 0.21521103382110596
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.21521103382110596
+--- !pf.Event
+lat: 49.83055151774235
+lon: 12.165845463565262
+time: '2024-06-01 07:45:56.480000019'
+depth: 4108.269173241388
+name: '2024-06-01T07:45:56.480000+00:00'
+magnitude: 0.24913349747657776
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.24913349747657776
+--- !pf.Event
+lat: 49.83063513256783
+lon: 12.212678797270032
+time: '2024-06-01 07:48:06.279999971'
+depth: 1758.628934955355
+name: '2024-06-01T07:48:06.280000+00:00'
+magnitude: 0.24911834299564362
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.24911834299564362
+--- !pf.Event
+lat: 49.993187789941004
+lon: 12.016214299537744
+time: '2024-06-01 07:48:29.460000038'
+depth: 3591.43178454988
+name: '2024-06-01T07:48:29.460000+00:00'
+magnitude: 0.24314531683921814
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.24314531683921814
+--- !pf.Event
+lat: 50.00954067699837
+lon: 12.104739846186655
+time: '2024-06-01 07:54:02.950000048'
+depth: 749.990665374449
+name: '2024-06-01T07:54:02.950000+00:00'
+magnitude: 0.16160736978054047
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.16160736978054047
+--- !pf.Event
+lat: 49.8238644158306
+lon: 12.14685555589767
+time: '2024-06-01 07:58:14.180000067'
+depth: 5322.573192832342
+name: '2024-06-01T07:58:14.180000+00:00'
+magnitude: 0.19037069380283356
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.19037069380283356
+--- !pf.Event
+lat: 49.95133985677929
+lon: 12.089229320760555
+time: '2024-06-01 08:14:07.589999914'
+depth: 2006.793928747159
+name: '2024-06-01T08:14:07.590000+00:00'
+magnitude: 0.1779770702123642
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.1779770702123642
+--- !pf.Event
+lat: 49.81041211257675
+lon: 12.246024651520038
+time: '2024-06-01 08:28:01.210000038'
+depth: 1900.2389119942004
+name: '2024-06-01T08:28:01.210000+00:00'
+magnitude: 0.27695608139038086
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.27695608139038086
+--- !pf.Event
+lat: 49.87012366544369
+lon: 12.147103806144694
+time: '2024-06-01 08:30:09.920000076'
+depth: 818.3998331588878
+name: '2024-06-01T08:30:09.920000+00:00'
+magnitude: 0.20177386701107025
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.20177386701107025
+--- !pf.Event
+lat: 49.85319439884811
+lon: 12.216512626893978
+time: '2024-06-01 08:48:10.5'
+depth: 417.3774927685
+name: '2024-06-01T08:48:10.500000+00:00'
+magnitude: 0.25249403715133667
+magnitude_type: 'semblance'
+extras:
+  n_picks: 5
+  n_stations: 26
+  semblance: 0.25249403715133667
+--- !pf.Event
+lat: 49.794101406597854
+lon: 11.904922690176477
+time: '2024-06-01 09:18:15.730000019'
+depth: 9197.916666666666
+name: '2024-06-01T09:18:15.730000+00:00'
+magnitude: 0.19421477615833282
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.19421477615833282
+--- !pf.Event
+lat: 50.18086840775479
+lon: 12.46999944495154
+time: '2024-06-01 09:58:56.160000086'
+depth: 10464.904480048692
+name: '2024-06-01T09:58:56.160000+00:00'
+magnitude: 0.27564653754234314
+magnitude_type: 'semblance'
+extras:
+  n_picks: 10
+  n_stations: 26
+  semblance: 0.27564653754234314
+--- !pf.Event
+lat: 49.82567206390095
+lon: 12.166692399829776
+time: '2024-06-01 10:01:07.430000067'
+depth: 2034.5927981176267
+name: '2024-06-01T10:01:07.430000+00:00'
+magnitude: 0.24229657649993896
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.24229657649993896
+--- !pf.Event
+lat: 49.8503254092497
+lon: 12.111224284125342
+time: '2024-06-01 10:07:03.900000095'
+depth: 4623.6022076311365
+name: '2024-06-01T10:07:03.900000+00:00'
+magnitude: 0.1416734904050827
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.1416734904050827
+--- !pf.Event
+lat: 49.82221426081062
+lon: 12.186768553485493
+time: '2024-06-01 10:11:38.930000067'
+depth: 345.3882277785564
+name: '2024-06-01T10:11:38.930000+00:00'
+magnitude: 0.2772451639175415
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.2772451639175415
+--- !pf.Event
+lat: 49.84473821349219
+lon: 12.154612268582921
+time: '2024-06-01 11:01:14.329999924'
+depth: 7139.121679079413
+name: '2024-06-01T11:01:14.330000+00:00'
+magnitude: 0.24677716195583344
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.24677716195583344
+--- !pf.Event
+lat: 50.04973129592054
+lon: 12.099261776271003
+time: '2024-06-01 11:04:36.700000048'
+depth: 10404.57059570236
+name: '2024-06-01T11:04:36.700000+00:00'
+magnitude: 0.3019782602787018
+magnitude_type: 'semblance'
+extras:
+  n_picks: 7
+  n_stations: 26
+  semblance: 0.3019782602787018
+--- !pf.Event
+lat: 49.882175408154524
+lon: 12.033688900731084
+time: '2024-06-01 11:23:47.609999895'
+depth: 2359.833746242308
+name: '2024-06-01T11:23:47.610000+00:00'
+magnitude: 0.23751989006996155
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.23751989006996155
+--- !pf.Event
+lat: 49.98734686769
+lon: 12.077393892445796
+time: '2024-06-01 11:32:00.460000038'
+depth: -10.416666666666664
+name: '2024-06-01T11:32:00.460000+00:00'
+magnitude: 0.19976219534873962
+magnitude_type: 'semblance'
+extras:
+  n_picks: 6
+  n_stations: 26
+  semblance: 0.19976219534873962
+--- !pf.Event
+lat: 49.81145225937574
+lon: 12.175392955329052
+time: '2024-06-01 11:51:42.670000076'
+depth: 1836.2992595222136
+name: '2024-06-01T11:51:42.670000+00:00'
+magnitude: 0.17872922122478485
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.17872922122478485
+--- !pf.Event
+lat: 49.9841721848231
+lon: 12.084159473535925
+time: '2024-06-01 12:38:27.410000086'
+depth: 1632.0973572522876
+name: '2024-06-01T12:38:27.410000+00:00'
+magnitude: 0.2135322242975235
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.2135322242975235
+--- !pf.Event
+lat: 49.86132532571285
+lon: 12.14805491647539
+time: '2024-06-01 12:45:34.809999943'
+depth: 1760.4166666666667
+name: '2024-06-01T12:45:34.810000+00:00'
+magnitude: 0.20443543791770935
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.20443543791770935
+--- !pf.Event
+lat: 49.86562608892346
+lon: 12.026063635171804
+time: '2024-06-01 12:47:47.210000038'
+depth: 2510.4166666666665
+name: '2024-06-01T12:47:47.210000+00:00'
+magnitude: 0.20195019245147705
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.20195019245147705
+--- !pf.Event
+lat: 49.83596584346976
+lon: 12.313150945582306
+time: '2024-06-01 13:09:49.119999886'
+depth: 8757.129669601709
+name: '2024-06-01T13:09:49.120000+00:00'
+magnitude: 0.22545106709003448
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.22545106709003448
+--- !pf.Event
+lat: 49.809146660108716
+lon: 11.969063798713822
+time: '2024-06-01 13:13:46.910000086'
+depth: 3564.0017645764055
+name: '2024-06-01T13:13:46.910000+00:00'
+magnitude: 0.258022278547287
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.258022278547287
+--- !pf.Event
+lat: 49.8435993077973
+lon: 12.174702811251349
+time: '2024-06-01 13:18:43.839999914'
+depth: 2412.9464832777057
+name: '2024-06-01T13:18:43.840000+00:00'
+magnitude: 0.21325300633907318
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.21325300633907318
+--- !pf.Event
+lat: 49.85931202322212
+lon: 11.948961048413203
+time: '2024-06-01 13:27:56.849999905'
+depth: 1925.2464420071874
+name: '2024-06-01T13:27:56.850000+00:00'
+magnitude: 0.24082644283771515
+magnitude_type: 'semblance'
+extras:
+  n_picks: 5
+  n_stations: 26
+  semblance: 0.24082644283771515
+--- !pf.Event
+lat: 49.800790063877145
+lon: 12.094514591442858
+time: '2024-06-01 13:34:37.730000019'
+depth: 666.8316693795764
+name: '2024-06-01T13:34:37.730000+00:00'
+magnitude: 0.22342804074287415
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.22342804074287415
+--- !pf.Event
+lat: 49.96019480493605
+lon: 12.124167334061838
+time: '2024-06-01 13:50:46.630000114'
+depth: -10.416666666666664
+name: '2024-06-01T13:50:46.630000+00:00'
+magnitude: 0.20586135983467102
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.20586135983467102
+--- !pf.Event
+lat: 49.82923468506744
+lon: 11.877289939586024
+time: '2024-06-01 13:55:21.25999999'
+depth: 14578.85183497579
+name: '2024-06-01T13:55:21.260000+00:00'
+magnitude: 0.1772487461566925
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.1772487461566925
+--- !pf.Event
+lat: 49.820686676989524
+lon: 12.010657107695756
+time: '2024-06-01 13:55:56.789999962'
+depth: 2021.0338166389383
+name: '2024-06-01T13:55:56.790000+00:00'
+magnitude: 0.2122489959001541
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.2122489959001541
+--- !pf.Event
+lat: 50.360673695591274
+lon: 12.49134634905944
+time: '2024-06-01 14:10:18.410000086'
+depth: 4965.13883736107
+name: '2024-06-01T14:10:18.410000+00:00'
+magnitude: 0.40520092844963074
+magnitude_type: 'semblance'
+extras:
+  n_picks: 11
+  n_stations: 26
+  semblance: 0.40520092844963074
+--- !pf.Event
+lat: 50.359012875561724
+lon: 12.491441838536774
+time: '2024-06-01 14:10:40.670000076'
+depth: 4093.742197354666
+name: '2024-06-01T14:10:40.670000+00:00'
+magnitude: 0.5465440154075623
+magnitude_type: 'semblance'
+extras:
+  n_picks: 14
+  n_stations: 26
+  semblance: 0.5465440154075623
+--- !pf.Event
+lat: 50.369214157552996
+lon: 12.471121958572068
+time: '2024-06-01 14:12:41.630000114'
+depth: 6351.016102143922
+name: '2024-06-01T14:12:41.630000+00:00'
+magnitude: 0.2890997529029846
+magnitude_type: 'semblance'
+extras:
+  n_picks: 8
+  n_stations: 26
+  semblance: 0.2890997529029846
+--- !pf.Event
+lat: 50.366512710190975
+lon: 12.480835292250184
+time: '2024-06-01 14:13:46.170000076'
+depth: 6348.035809390359
+name: '2024-06-01T14:13:46.170000+00:00'
+magnitude: 0.2944328784942627
+magnitude_type: 'semblance'
+extras:
+  n_picks: 8
+  n_stations: 26
+  semblance: 0.2944328784942627
+--- !pf.Event
+lat: 49.974114982626105
+lon: 12.09591458242612
+time: '2024-06-01 14:15:36.650000095'
+depth: 1510.4166666666667
+name: '2024-06-01T14:15:36.650000+00:00'
+magnitude: 0.18815936148166656
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.18815936148166656
+--- !pf.Event
+lat: 49.96723946882399
+lon: 12.088455536331058
+time: '2024-06-01 14:19:12.849999905'
+depth: -10.416666666666664
+name: '2024-06-01T14:19:12.850000+00:00'
+magnitude: 0.2175949215888977
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.2175949215888977
+--- !pf.Event
+lat: 49.820760854640774
+lon: 12.090906543418438
+time: '2024-06-01 14:20:09.900000095'
+depth: 9403.484116272786
+name: '2024-06-01T14:20:09.900000+00:00'
+magnitude: 0.27747541666030884
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.27747541666030884
+--- !pf.Event
+lat: 49.795157584697115
+lon: 11.972547927493967
+time: '2024-06-01 14:25:21.25999999'
+depth: 1857.3499744745736
+name: '2024-06-01T14:25:21.260000+00:00'
+magnitude: 0.21289370954036713
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.21289370954036713
+--- !pf.Event
+lat: 49.883193089429106
+lon: 12.063589735159443
+time: '2024-06-01 14:28:48.640000105'
+depth: 2010.4166666666665
+name: '2024-06-01T14:28:48.640000+00:00'
+magnitude: 0.17557239532470703
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.17557239532470703
+--- !pf.Event
+lat: 49.90621548174852
+lon: 12.045857818131918
+time: '2024-06-01 14:32:17.25999999'
+depth: 562.2509865457531
+name: '2024-06-01T14:32:17.260000+00:00'
+magnitude: 0.17642296850681305
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.17642296850681305
+--- !pf.Event
+lat: 49.96944764262175
+lon: 11.932776774375894
+time: '2024-06-01 14:45:34.210000038'
+depth: 12647.489060388569
+name: '2024-06-01T14:45:34.210000+00:00'
+magnitude: 0.1788032501935959
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.1788032501935959
+--- !pf.Event
+lat: 49.991836785642704
+lon: 11.9414436841921
+time: '2024-06-01 14:47:11.589999914'
+depth: 10156.23117692788
+name: '2024-06-01T14:47:11.590000+00:00'
+magnitude: 0.23418773710727692
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.23418773710727692
+--- !pf.Event
+lat: 49.87038814055551
+lon: 12.146211124582603
+time: '2024-06-01 14:51:16.49000001'
+depth: 9896.216788826712
+name: '2024-06-01T14:51:16.490000+00:00'
+magnitude: 0.19583477079868317
+magnitude_type: 'semblance'
+extras:
+  n_picks: 6
+  n_stations: 26
+  semblance: 0.19583477079868317
+--- !pf.Event
+lat: 50.36647869014428
+lon: 12.486706159623385
+time: '2024-06-01 15:09:33.859999895'
+depth: 7408.093549906613
+name: '2024-06-01T15:09:33.860000+00:00'
+magnitude: 0.44523558020591736
+magnitude_type: 'semblance'
+extras:
+  n_picks: 11
+  n_stations: 25
+  semblance: 0.44523558020591736
+--- !pf.Event
+lat: 49.79176283802422
+lon: 11.978075190515378
+time: '2024-06-01 15:18:51.400000095'
+depth: 7271.967669638811
+name: '2024-06-01T15:18:51.400000+00:00'
+magnitude: 0.18949660658836365
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.18949660658836365
+--- !pf.Event
+lat: 49.84909585358587
+lon: 12.067673347945027
+time: '2024-06-01 15:19:41.099999905'
+depth: 7778.766253886948
+name: '2024-06-01T15:19:41.100000+00:00'
+magnitude: 0.22813451290130615
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 26
+  semblance: 0.22813451290130615
+--- !pf.Event
+lat: 49.99246567414126
+lon: 12.131205346214069
+time: '2024-06-01 15:39:26.549999952'
+depth: 6406.812305013482
+name: '2024-06-01T15:39:26.550000+00:00'
+magnitude: 0.19306816160678864
+magnitude_type: 'semblance'
+extras:
+  n_picks: 5
+  n_stations: 26
+  semblance: 0.19306816160678864
+--- !pf.Event
+lat: 49.84982126477364
+lon: 12.157073339385752
+time: '2024-06-01 15:45:01.619999886'
+depth: 2105.689356313659
+name: '2024-06-01T15:45:01.620000+00:00'
+magnitude: 0.18600556254386902
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.18600556254386902
+--- !pf.Event
+lat: 49.84467699165936
+lon: 11.95370534466157
+time: '2024-06-01 15:45:28.220000029'
+depth: 4746.565660343024
+name: '2024-06-01T15:45:28.220000+00:00'
+magnitude: 0.17490994930267334
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.17490994930267334
+--- !pf.Event
+lat: 49.83958080361939
+lon: 11.957892470791611
+time: '2024-06-01 15:46:13.690000057'
+depth: 4220.925223115159
+name: '2024-06-01T15:46:13.690000+00:00'
+magnitude: 0.19773748517036438
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.19773748517036438
+--- !pf.Event
+lat: 50.0130744189143
+lon: 12.057401699834102
+time: '2024-06-01 15:54:15.640000105'
+depth: 3031.452276860636
+name: '2024-06-01T15:54:15.640000+00:00'
+magnitude: 0.16408640146255493
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.16408640146255493
+--- !pf.Event
+lat: 49.8292345089727
+lon: 12.00807172025709
+time: '2024-06-01 15:59:48.480000019'
+depth: 10882.85836915961
+name: '2024-06-01T15:59:48.480000+00:00'
+magnitude: 0.18244071304798126
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.18244071304798126
+--- !pf.Event
+lat: 49.822192449844174
+lon: 12.167874238898285
+time: '2024-06-01 16:06:50.839999914'
+depth: 5499.994974638446
+name: '2024-06-01T16:06:50.840000+00:00'
+magnitude: 0.15145009756088257
+magnitude_type: 'semblance'
+extras:
+  n_picks: 1
+  n_stations: 25
+  semblance: 0.15145009756088257
+--- !pf.Event
+lat: 49.875480646653024
+lon: 12.018680192778229
+time: '2024-06-01 16:08:36.099999905'
+depth: 2242.1750274754245
+name: '2024-06-01T16:08:36.100000+00:00'
+magnitude: 0.21294640004634857
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.21294640004634857
+--- !pf.Event
+lat: 49.82898704824901
+lon: 12.16607031043872
+time: '2024-06-01 16:24:36.799999952'
+depth: 2260.4166666666665
+name: '2024-06-01T16:24:36.800000+00:00'
+magnitude: 0.18359464406967163
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 26
+  semblance: 0.18359464406967163
+--- !pf.Event
+lat: 50.55867152566645
+lon: 12.508242307737067
+time: '2024-06-01 16:44:32.980000019'
+depth: 2330.8618249113306
+name: '2024-06-01T16:44:32.980000+00:00'
+magnitude: 0.16666659712791443
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.16666659712791443
+--- !pf.Event
+lat: 49.9709995897027
+lon: 12.09490132715917
+time: '2024-06-01 16:54:25.170000076'
+depth: 5134.783726845191
+name: '2024-06-01T16:54:25.170000+00:00'
+magnitude: 0.18054351210594177
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 26
+  semblance: 0.18054351210594177
+--- !pf.Event
+lat: 49.78847406726701
+lon: 12.167247710010358
+time: '2024-06-01 17:17:57.809999943'
+depth: 8413.54345208545
+name: '2024-06-01T17:17:57.810000+00:00'
+magnitude: 0.1730283796787262
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.1730283796787262
+--- !pf.Event
+lat: 49.883114274579995
+lon: 12.05118365680318
+time: '2024-06-01 17:33:20.75999999'
+depth: 2388.1964510567736
+name: '2024-06-01T17:33:20.760000+00:00'
+magnitude: 0.21241521835327148
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.21241521835327148
+--- !pf.Event
+lat: 49.82830132651873
+lon: 12.166408652013443
+time: '2024-06-01 17:38:36.480000019'
+depth: 697.9166666666666
+name: '2024-06-01T17:38:36.480000+00:00'
+magnitude: 0.2327321469783783
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.2327321469783783
+--- !pf.Event
+lat: 49.87154460115119
+lon: 12.146432969007831
+time: '2024-06-01 17:43:59.289999962'
+depth: 2120.665977851042
+name: '2024-06-01T17:43:59.290000+00:00'
+magnitude: 0.1581883281469345
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.1581883281469345
+--- !pf.Event
+lat: 50.545662686934605
+lon: 12.484836214721376
+time: '2024-06-01 17:48:21.00999999'
+depth: 14595.094297187248
+name: '2024-06-01T17:48:21.010000+00:00'
+magnitude: 0.11763988435268402
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.11763988435268402
+--- !pf.Event
+lat: 49.822320132979414
+lon: 11.880842831302937
+time: '2024-06-01 17:50:56.269999981'
+depth: 8591.767264974464
+name: '2024-06-01T17:50:56.270000+00:00'
+magnitude: 0.22551549971103668
+magnitude_type: 'semblance'
+extras:
+  n_picks: 5
+  n_stations: 25
+  semblance: 0.22551549971103668
+--- !pf.Event
+lat: 49.9553860180065
+lon: 12.067225170817512
+time: '2024-06-01 17:56:20.380000114'
+depth: 365.08169948579337
+name: '2024-06-01T17:56:20.380000+00:00'
+magnitude: 0.14767895638942719
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.14767895638942719
+--- !pf.Event
+lat: 49.971359849208554
+lon: 12.082978022222754
+time: '2024-06-01 17:57:43.25999999'
+depth: 2635.2875503267824
+name: '2024-06-01T17:57:43.260000+00:00'
+magnitude: 0.1473899930715561
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.1473899930715561
+--- !pf.Event
+lat: 49.83852577524891
+lon: 11.979864242360359
+time: '2024-06-01 18:16:11.150000095'
+depth: 9776.568031068757
+name: '2024-06-01T18:16:11.150000+00:00'
+magnitude: 0.2671380341053009
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.2671380341053009
+--- !pf.Event
+lat: 50.00819004752862
+lon: 12.105879479147927
+time: '2024-06-01 18:52:13.480000019'
+depth: 875.1164848742662
+name: '2024-06-01T18:52:13.480000+00:00'
+magnitude: 0.1836819350719452
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.1836819350719452
+--- !pf.Event
+lat: 49.87933794606512
+lon: 12.147963658319975
+time: '2024-06-01 18:57:31.599999905'
+depth: 4340.159219942674
+name: '2024-06-01T18:57:31.600000+00:00'
+magnitude: 0.1688549667596817
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.1688549667596817
+--- !pf.Event
+lat: 49.88787764228355
+lon: 12.121487724602506
+time: '2024-06-01 19:28:35.140000105'
+depth: 3302.0833333333335
+name: '2024-06-01T19:28:35.140000+00:00'
+magnitude: 0.22723102569580078
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.22723102569580078
+--- !pf.Event
+lat: 50.19908028462411
+lon: 12.432511060052528
+time: '2024-06-01 19:42:13.819999933'
+depth: 105.80762907529987
+name: '2024-06-01T19:42:13.820000+00:00'
+magnitude: 0.2727649211883545
+magnitude_type: 'semblance'
+extras:
+  n_picks: 9
+  n_stations: 25
+  semblance: 0.2727649211883545
+--- !pf.Event
+lat: 50.519769012911354
+lon: 12.473084994598727
+time: '2024-06-01 19:43:20.119999886'
+depth: 897.0894526261682
+name: '2024-06-01T19:43:20.120000+00:00'
+magnitude: 0.20435191690921783
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.20435191690921783
+--- !pf.Event
+lat: 49.8862003748759
+lon: 11.937742837629521
+time: '2024-06-01 19:47:50.829999924'
+depth: 11103.75790218958
+name: '2024-06-01T19:47:50.830000+00:00'
+magnitude: 0.14650848507881165
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.14650848507881165
+--- !pf.Event
+lat: 49.834082043296824
+lon: 12.163594295372393
+time: '2024-06-01 19:56:36.74000001'
+depth: 1378.5548773405528
+name: '2024-06-01T19:56:36.740000+00:00'
+magnitude: 0.2012139856815338
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.2012139856815338
+--- !pf.Event
+lat: 49.9520923202984
+lon: 12.094782308551643
+time: '2024-06-01 20:00:23.109999895'
+depth: 1849.8491316487657
+name: '2024-06-01T20:00:23.110000+00:00'
+magnitude: 0.15207915008068085
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.15207915008068085
+--- !pf.Event
+lat: 49.99839292333006
+lon: 11.933504228423391
+time: '2024-06-01 20:01:32.769999981'
+depth: 114.80990665198796
+name: '2024-06-01T20:01:32.770000+00:00'
+magnitude: 0.15028589963912964
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.15028589963912964
+--- !pf.Event
+lat: 49.81595517978939
+lon: 12.146817209813033
+time: '2024-06-01 20:05:58.769999981'
+depth: 1415.1173858895122
+name: '2024-06-01T20:05:58.770000+00:00'
+magnitude: 0.21768976747989655
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.21768976747989655
+--- !pf.Event
+lat: 49.81478861836959
+lon: 12.053775670902736
+time: '2024-06-01 20:10:09.730000019'
+depth: 1793.7258266345257
+name: '2024-06-01T20:10:09.730000+00:00'
+magnitude: 0.1956905871629715
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.1956905871629715
+--- !pf.Event
+lat: 49.95848709823958
+lon: 12.09428784158761
+time: '2024-06-01 20:12:35.529999971'
+depth: 7973.747523789796
+name: '2024-06-01T20:12:35.530000+00:00'
+magnitude: 0.18570788204669952
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.18570788204669952
+--- !pf.Event
+lat: 49.828364905482694
+lon: 12.166588793682665
+time: '2024-06-01 20:17:53.710000038'
+depth: 1906.5121634725833
+name: '2024-06-01T20:17:53.710000+00:00'
+magnitude: 0.22465726733207703
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.22465726733207703
+--- !pf.Event
+lat: 49.96330062369369
+lon: 12.014016118404063
+time: '2024-06-01 20:29:56.809999943'
+depth: -10.416666666666664
+name: '2024-06-01T20:29:56.810000+00:00'
+magnitude: 0.16614603996276855
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.16614603996276855
+--- !pf.Event
+lat: 49.83106835392387
+lon: 12.13607187742194
+time: '2024-06-01 20:35:33.880000114'
+depth: 1529.6537350023564
+name: '2024-06-01T20:35:33.880000+00:00'
+magnitude: 0.15300992131233215
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.15300992131233215
+--- !pf.Event
+lat: 49.99133690101189
+lon: 12.087443725587255
+time: '2024-06-01 20:38:17.839999914'
+depth: 1390.923297476896
+name: '2024-06-01T20:38:17.840000+00:00'
+magnitude: 0.17926719784736633
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.17926719784736633
+--- !pf.Event
+lat: 49.80970755210129
+lon: 12.094198586882566
+time: '2024-06-01 20:39:41.380000114'
+depth: 1964.9346874217495
+name: '2024-06-01T20:39:41.380000+00:00'
+magnitude: 0.19042015075683594
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.19042015075683594
+--- !pf.Event
+lat: 50.4884363631396
+lon: 12.462933966179621
+time: '2024-06-01 20:48:12.769999981'
+depth: 746.7087625082809
+name: '2024-06-01T20:48:12.770000+00:00'
+magnitude: 0.17497463524341583
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.17497463524341583
+--- !pf.Event
+lat: 49.894916253522894
+lon: 12.113809726980337
+time: '2024-06-01 21:07:24.49000001'
+depth: 2051.9296155704824
+name: '2024-06-01T21:07:24.490000+00:00'
+magnitude: 0.15746288001537323
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.15746288001537323
+--- !pf.Event
+lat: 49.8731522126604
+lon: 12.013042740283758
+time: '2024-06-01 21:18:34.99000001'
+depth: 2178.481305107257
+name: '2024-06-01T21:18:34.990000+00:00'
+magnitude: 0.1727401316165924
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.1727401316165924
+--- !pf.Event
+lat: 49.82777886973723
+lon: 11.953450985216278
+time: '2024-06-01 21:29:24.700000048'
+depth: 3470.255989124431
+name: '2024-06-01T21:29:24.700000+00:00'
+magnitude: 0.2740629017353058
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.2740629017353058
+--- !pf.Event
+lat: 49.86458433794787
+lon: 12.149754256780946
+time: '2024-06-01 21:34:19.519999981'
+depth: 565.9976705162239
+name: '2024-06-01T21:34:19.520000+00:00'
+magnitude: 0.1816989630460739
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.1816989630460739
+--- !pf.Event
+lat: 49.848309678837424
+lon: 12.003631607692565
+time: '2024-06-01 21:47:37.24000001'
+depth: 1088.3987159739227
+name: '2024-06-01T21:47:37.240000+00:00'
+magnitude: 0.15797606110572815
+magnitude_type: 'semblance'
+extras:
+  n_picks: 1
+  n_stations: 25
+  semblance: 0.15797606110572815
+--- !pf.Event
+lat: 49.84642093876267
+lon: 12.175352249675022
+time: '2024-06-01 21:59:27.869999886'
+depth: 722.0214600410962
+name: '2024-06-01T21:59:27.870000+00:00'
+magnitude: 0.19827790558338165
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.19827790558338165
+--- !pf.Event
+lat: 49.914270823918706
+lon: 11.91115667398198
+time: '2024-06-01 22:54:27.569999933'
+depth: 8278.955248838021
+name: '2024-06-01T22:54:27.570000+00:00'
+magnitude: 0.21723352372646332
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.21723352372646332
+--- !pf.Event
+lat: 49.866783228822875
+lon: 11.99793907305241
+time: '2024-06-01 22:56:14.369999886'
+depth: 9142.78532145223
+name: '2024-06-01T22:56:14.370000+00:00'
+magnitude: 0.13568134605884552
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.13568134605884552
+--- !pf.Event
+lat: 50.006748396959985
+lon: 12.04948321743234
+time: '2024-06-01 23:10:56.690000057'
+depth: 9354.461807537038
+name: '2024-06-01T23:10:56.690000+00:00'
+magnitude: 0.16404232382774353
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.16404232382774353
+--- !pf.Event
+lat: 50.61960185829021
+lon: 12.840327830348544
+time: '2024-06-01 23:18:02.039999962'
+depth: 10010.416666666666
+name: '2024-06-01T23:18:02.040000+00:00'
+magnitude: 0.13781660795211792
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.13781660795211792
+--- !pf.Event
+lat: 49.89059400352533
+lon: 12.065927894674665
+time: '2024-06-01 23:29:25.130000114'
+depth: 4135.416666666666
+name: '2024-06-01T23:29:25.130000+00:00'
+magnitude: 0.24502892792224884
+magnitude_type: 'semblance'
+extras:
+  n_picks: 3
+  n_stations: 25
+  semblance: 0.24502892792224884
+--- !pf.Event
+lat: 50.373132050669675
+lon: 12.474769434871138
+time: '2024-06-01 23:30:59.400000095'
+depth: 7757.837687250401
+name: '2024-06-01T23:30:59.400000+00:00'
+magnitude: 0.1871849000453949
+magnitude_type: 'semblance'
+extras:
+  n_picks: 4
+  n_stations: 25
+  semblance: 0.1871849000453949
+--- !pf.Event
+lat: 50.35791542885129
+lon: 12.500147323128338
+time: '2024-06-01 23:31:42.619999886'
+depth: 6151.245583731472
+name: '2024-06-01T23:31:42.620000+00:00'
+magnitude: 0.63639897108078
+magnitude_type: 'semblance'
+extras:
+  n_picks: 16
+  n_stations: 25
+  semblance: 0.63639897108078
+--- !pf.Event
+lat: 49.81203274270257
+lon: 12.109413730112498
+time: '2024-06-01 23:44:19.230000019'
+depth: 1526.7335043212013
+name: '2024-06-01T23:44:19.230000+00:00'
+magnitude: 0.1446838229894638
+magnitude_type: 'semblance'
+extras:
+  n_picks: 2
+  n_stations: 25
+  semblance: 0.1446838229894638

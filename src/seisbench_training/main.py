@@ -2,6 +2,7 @@ import logging
 from typing import Type
 
 import hydra
+import mlflow
 import numpy as np
 import pytorch_lightning as pl
 import seisbench.data as sbd
@@ -20,6 +21,9 @@ from .utils.model_utils import SeisBenchLit, phase_dict
 
 app = typer.Typer()
 
+mlflow.enable_system_metrics_logging()
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] [%(levelname)s] - %(message)s",
@@ -29,43 +33,18 @@ log = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
 
-def get_augmentation_configs(cfg):
-    return [
-        sbg.OneOf(
-            [
-                cfg.augmentations.window_default(
-                    list(phase_dict.keys()),
-                    samples_before=cfg.augmentations.window_default.samples_before,
-                    windowlen=cfg.augmentations.window_default.windowlen,
-                    selection=cfg.augmentations.window_default.selection,
-                    strategy=cfg.augmentations.window_default.strategy,
-                ),
-                cfg.augmentations.null_augmentation(),
-            ],
-            probabilities=[2, 1],
-        ),
-        cfg.augmentations.random_window_default._target_(
-            windowlen=cfg.augmentations.random_window_default.windowlen,
-            strategy=cfg.augmentations.random_window_default.strategy,
-        ),
-        cfg.augmentations.normalize_default._target_(
-            demean_axis=cfg.augmentations.normalize_default.demean_axis,
-            amp_norm_axis=cfg.augmentations.normalize_default.amp_norm_axis,
-            amp_norm_type=cfg.augmentations.normalize_default.amp_norm_type,
-        ),
-        cfg.augmentations.changeDtype._target_(
-            dtype=cfg.augmentations.changeDtype.dtype,
-        ),
-        cfg.augmentations.prob_labeller_default._target_(
-            label_columns=phase_dict,
-            sigma=cfg.augmentations.prob_labeller_default.sigma,
-            dim=cfg.augmentations.prob_labeller_default.dim,
-        ),
-    ]
-
-
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
 def train_seisbench(cfg):
+    log.info(cfg)
+    log.info(f"Starting experiment: {cfg.experiment_name}")
+    dataset = cfg.dataset
+    log.info(f"Loading dataset: {dataset.name}")
+
+    pl_model = SeisBenchLit(
+        dataset.name,
+        pretrained_model_name=cfg.training.pretrained_model_name,
+    )
+
     augmentations = [
         sbg.OneOf(
             [
@@ -95,13 +74,9 @@ def train_seisbench(cfg):
             sigma=cfg.augmentations.prob_labeller_default.sigma,
             dim=cfg.augmentations.prob_labeller_default.dim,
             shape=cfg.augmentations.prob_labeller_default.shape,
+            model_labels=pl_model.label_order,
         ),
     ]
-
-    log.info(cfg)
-    log.info(f"Starting experiment: {cfg.experiment_name}")
-    dataset = cfg.dataset
-    log.info(f"Loading dataset: {dataset.name}")
 
     try:
         DatasetClass: Type[sbd.BenchmarkDataset] | None = getattr(sbd, dataset.name)
@@ -128,17 +103,14 @@ def train_seisbench(cfg):
     test_gen = sbg.GenericGenerator(test)
 
     log.info("Setting up Lightning model...")
-    pl_model = SeisBenchLit(
-        lr=cfg.training.lr,
-        sigma=cfg.augmentations.prob_labeller_default.sigma,
-        pretrained_model_name=cfg.training.pretrained_model_name,
-    )
+
     tpl_transfer = (
         ""
         if not cfg.training.pretrained_model_name
         else f"_from_{cfg.training.pretrained_model_name}"
     )
     filename = f"best_model_sigma_{cfg.augmentations.prob_labeller_default.shape}{tpl_transfer}"
+
     log.info("Adding Augmentation...")
     train_gen.add_augmentations(augmentations)
     dev_gen.add_augmentations(augmentations)
@@ -172,18 +144,15 @@ def train_seisbench(cfg):
         experiment_name=cfg.experiment_name,
         log_model=True,
     )
-    # TODO: Add SystemMetrics callback
-    # https://github.com/Lightning-AI/pytorch-lightning/issues/20563
+
     checkpoint_callback = ModelCheckpoint(
         filename=filename,
         monitor="val_loss",
         mode="min",
     )
-    early_stopping_callback = pl.callbacks.EarlyStopping(monitor="val_loss", patience=3)
 
     callbacks = [
         checkpoint_callback,
-        early_stopping_callback,
         EvaluationMetrics(mlf_logger),
     ]
 
@@ -199,7 +168,12 @@ def train_seisbench(cfg):
         devices=1,
     )
 
-    trainer.fit(pl_model, train_loader, test_loader)
+    if cfg.dataset.test_run:
+        log.info("Using dev set ...")
+        trainer.fit(pl_model, dev_loader, test_loader)
+    else:
+        log.info("Using Train set ...")
+        trainer.fit(pl_model, train_loader, dev_loader)
     mlf_logger.experiment.log_dict(
         run_id=mlf_logger.run_id,
         dictionary=OmegaConf.to_container(cfg, resolve=True),
