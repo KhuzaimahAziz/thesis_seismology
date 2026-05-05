@@ -8,9 +8,10 @@ output/
 mlruns/
 data/
 graphs-data/
+plots/
 src/mlruns/
 notebooks/
-
+qseek/
 # Python-generated files
 __pycache__/
 *.py[oc]

@@ -131,7 +131,7 @@ def calculate_pick_differences(
 
     p_mask = label_max[:, p_idx].to(bool)
     s_mask = label_max[:, s_idx].to(bool)
-
+    
     p_mask_noise = ~p_mask
     s_mask_noise = ~s_mask
     p_mask_noise[:edge_mask] = False
@@ -141,9 +141,6 @@ def calculate_pick_differences(
 
     p_noise_max, _ = predictions[:, p_idx][p_mask_noise].max(dim=-1)
     s_noise_max, _ = predictions[:, s_idx][s_mask_noise].max(dim=-1)
-
-    # p_mask &= prediction_max[:, p_idx] >= min_pick_height
-    # s_mask &= prediction_max[:, s_idx] >= min_pick_height
 
     p_predicted_sample = prediction_pick_sample[:, p_idx][p_mask].type(torch.float32)
     p_labeled_sample = label_pick_sample[:, p_idx][p_mask].type(torch.float32)
