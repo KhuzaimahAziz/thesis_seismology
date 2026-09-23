@@ -4,7 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Literal, NamedTuple
-
+import torch
 import mlflow
 import numpy as np
 from matplotlib import pyplot as plt
@@ -12,8 +12,10 @@ from mlflow.system_metrics.system_metrics_monitor import SystemMetricsMonitor
 from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.loggers import MLFlowLogger
 from torch import Tensor
+import seisbench.models as sbm
 
 from metrics.evaluation_metrics import (
+    DetectionMetrics,
     PickStats,
     calculate_pick_differences,
     calculate_precision_recall_f1,
@@ -21,6 +23,7 @@ from metrics.evaluation_metrics import (
     plot_histogram,
     plot_precision_recall_f1,
     plot_roc_curve,
+    plot_comparison
 )
 from seisbench_training.utils.model_utils import SeisBenchLit
 
@@ -33,7 +36,8 @@ mlflow.enable_system_metrics_logging()
 
 
 class CollectedStats:
-    stats: dict[str, list[PickStats]] = defaultdict(list)
+    def __init__(self) -> None:
+        self.stats: dict[str, list[PickStats]] = defaultdict(list)
 
     def get_stats(self, phase: str) -> PickStats:
         if phase not in self.stats:
@@ -70,13 +74,19 @@ class EvaluationMetrics(Callback):
 
     best_model: BestModel | None = None
 
-    def __init__(self, mlflow: MLFlowLogger) -> None:
+    def __init__(self, mlflow: MLFlowLogger, baseline_model_name: str = "original") -> None:
         self.scores = []
 
         self.stats = CollectedStats()
         self.mlflow_logger = mlflow
         self.experiment = mlflow.experiment
         super().__init__()
+
+        self.baseline = None
+        self.baseline_stats = CollectedStats()
+        if baseline_model_name:
+            self.baseline = sbm.PhaseNet.from_pretrained(baseline_model_name).eval()
+            self.baseline.requires_grad_(False)
 
     def on_fit_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
         self.system_monitor = SystemMetricsMonitor(run_id=self.mlflow_logger.run_id)
@@ -157,28 +167,41 @@ class EvaluationMetrics(Callback):
                 f"roc_curve_plot/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
             )
             print("Logged ROC Curve for phase", phase)
-            optimal_detection_metrics = get_f1_optimal_metrics(metric_results)
 
-            sr = SAMPLING_RATE
             self.mlflow_logger.log_metrics(
-                {
-                    f"{phase}_mean_difference": pick_stats.mean_difference / sr,
-                    f"{phase}_median_difference": pick_stats.median_difference / sr,
-                    f"{phase}_mean_abs_error": pick_stats.mean_abs_error / sr,
-                    f"{phase}_rms_error": pick_stats.rms_error / sr,
-                    f"{phase}_precision": optimal_detection_metrics.precision,
-                    f"{phase}_recall": optimal_detection_metrics.recall,
-                    f"{phase}_f1_score": optimal_detection_metrics.f1_score,
-                    f"{phase}_optimal_threshold": optimal_detection_metrics.threshold,
-                    f"{phase}_auc": pick_stats.auc,
-                },
+                scalar_metrics(pick_stats, metric_results, phase),
                 step=trainer.global_step,
             )
 
+            if self.baseline is not None:
+                base_stats = self.baseline_stats.get_stats(phase)
+                base_results = calculate_precision_recall_f1(stats=base_stats)
+                self.mlflow_logger.log_metrics(
+                    scalar_metrics(base_stats, base_results, f"global_{phase}"),
+                    step=trainer.global_step,
+                )
+
+                local_name = (
+                    "Local-fine-tuned" if pl_module.pretrained_model_name else "Local-scratch"
+                )
+                figure_comparison = plot_comparison(
+                    {
+                        "Global/original": (base_stats, base_results),
+                        local_name: (pick_stats, metric_results),
+                    },
+                    title=f"{phase}-phase: {local_name} vs Global - Epoch {trainer.current_epoch}",
+                    sampling_rate=SAMPLING_RATE,
+                )
+                self.experiment.log_figure(
+                    self.mlflow_logger.run_id,
+                    figure_comparison,
+                    f"comparison/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
+                )
         self.stats.clear()
+        self.baseline_stats.clear()
         plt.close("all")
 
-        self.store_model(trainer, pl_module)  # type: ignore
+        self.store_model(trainer, pl_module)
 
     def store_model(self, trainer: Trainer, pl_module: SeisBenchLit) -> None:
         callback_metrics = trainer.callback_metrics
@@ -226,3 +249,29 @@ class EvaluationMetrics(Callback):
             label_order=pl_module.label_order,
         )
         self.stats.add(stats)
+        if self.baseline is not None:
+            X = batch["X"]
+            self.baseline.to(X.device)
+            with torch.no_grad():
+                pred = self.baseline(self.baseline.annotate_batch_pre(X, {}))
+            order = [self.baseline.labels.index(c) for c in pl_module.label_order]
+            self.baseline_stats.add(
+                calculate_pick_differences(
+                    pred[:, order].cpu(), label_data.cpu(), window_width=200, label_order=pl_module.label_order))
+
+def scalar_metrics(
+    stats: PickStats, detection: list[DetectionMetrics], prefix: str
+) -> dict[str, float]:
+    best = get_f1_optimal_metrics(detection)
+    sr = SAMPLING_RATE
+    return {
+        f"{prefix}_mean_difference": stats.mean_difference / sr,
+        f"{prefix}_median_difference": stats.median_difference / sr,
+        f"{prefix}_mean_abs_error": stats.mean_abs_error / sr,
+        f"{prefix}_rms_error": stats.rms_error / sr,
+        f"{prefix}_precision": best.precision,
+        f"{prefix}_recall": best.recall,
+        f"{prefix}_f1_score": best.f1_score,
+        f"{prefix}_optimal_threshold": best.threshold,
+        f"{prefix}_auc": stats.auc,
+    }

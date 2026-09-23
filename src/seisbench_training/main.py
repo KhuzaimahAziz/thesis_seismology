@@ -35,6 +35,7 @@ torch.set_float32_matmul_precision("high")
 
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
 def train_seisbench(cfg):
+    pl.seed_everything(cfg.training.seed, workers=True)
     log.info(cfg)
     log.info(f"Starting experiment: {cfg.experiment_name}")
     dataset = cfg.dataset
@@ -42,7 +43,7 @@ def train_seisbench(cfg):
 
     pl_model = SeisBenchLit(
         dataset.name,
-        pretrained_model_name=cfg.training.pretrained_model_name,
+        pretrained_model_name=cfg.training.baseline_model_name, optimizer_params={"lr": cfg.training.lr},
     )
 
     augmentations = [
@@ -140,9 +141,14 @@ def train_seisbench(cfg):
         num_workers=cfg.training.num_workers,
     )
 
+    variant = (
+        f"transfer_{cfg.training.baseline_model_name}"
+        if cfg.training.baseline_model_name else "scratch"
+    )
+
     mlf_logger = MLFlowLogger(
         experiment_name=cfg.experiment_name,
-        log_model=True,
+        run_name=variant, log_model=True
     )
 
     checkpoint_callback = ModelCheckpoint(
@@ -153,7 +159,7 @@ def train_seisbench(cfg):
 
     callbacks = [
         checkpoint_callback,
-        EvaluationMetrics(mlf_logger),
+        EvaluationMetrics(mlf_logger, cfg.training.baseline_model_name),
     ]
 
     log.info(f"Beginning training for {cfg.training.epochs} epochs...")
@@ -173,12 +179,12 @@ def train_seisbench(cfg):
         trainer.fit(pl_model, dev_loader, test_loader)
     else:
         log.info("Using Train set ...")
-        trainer.fit(pl_model, train_loader, dev_loader)
-    mlf_logger.experiment.log_dict(
+        mlf_logger.experiment.log_dict(
         run_id=mlf_logger.run_id,
         dictionary=OmegaConf.to_container(cfg, resolve=True),
         artifact_file=f"config_{cfg.training.epochs}.yaml",
     )
+        trainer.fit(pl_model, train_loader, dev_loader)
 
     log.info("Training complete!")
 

@@ -3,4 +3,6 @@ batch_size: 1024
 lr: 1e-3
 optimizer: "Adam"
 num_workers: 16
+baseline_model_name: "original"
+seed: 42
 pretrained_model_name: ""

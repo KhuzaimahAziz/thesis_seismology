@@ -234,6 +234,47 @@ def plot_histogram(
         plt.show()
     return fig
 
+def plot_comparison(
+    models: dict[str, tuple[PickStats, list[DetectionMetrics]]],
+    title: str,
+    sampling_rate: float = 100.0,
+    time_window_limit: float = 1.0,
+) -> Figure:
+    """Overlay residual histogram, F1-vs-threshold and ROC for several models."""
+    fig, (ax_h, ax_f1, ax_roc) = plt.subplots(1, 3, figsize=(16, 5))
+    for name, (stats, detection) in models.items():
+        offsets = stats.offset_samples / sampling_rate
+        offsets = offsets[~np.isnan(offsets)]
+        ax_h.hist(
+            offsets,
+            bins=100,
+            range=(-time_window_limit, time_window_limit),
+            histtype="step",  # outlines, so overlapping models stay visible
+            linewidth=1.5,
+            label=f"{name} (MAE {stats.mean_abs_error / sampling_rate:.3f} s)",
+        )
+        ax_f1.plot(
+            [d.threshold for d in detection],
+            [d.f1_score for d in detection],
+            linewidth=2,
+            label=f"{name} (max F1 {get_f1_optimal_metrics(detection).f1_score:.3f})",
+        )
+        fpr, tpr = stats.roc_curve
+        ax_roc.plot(fpr, tpr, linewidth=2, label=f"{name} (AUC {stats.auc:.3f})")
+
+    ax_h.set_xlabel("Pick time difference (s)")
+    ax_h.set_ylabel("Count")
+    ax_f1.set_xlabel("Threshold")
+    ax_f1.set_ylabel("F1 score")
+    ax_roc.plot([0, 1], [0, 1], "--", color="gray", linewidth=1)
+    ax_roc.set_xlabel("False Positive Rate")
+    ax_roc.set_ylabel("True Positive Rate")
+    for ax in (ax_h, ax_f1, ax_roc):
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize="small")
+    fig.suptitle(title)
+    fig.tight_layout()
+    return fig
 
 def calculate_precision_recall_f1(
     stats: PickStats,
