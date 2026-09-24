@@ -104,21 +104,10 @@ def calculate_pick_differences(
 
     # Mask out predictions outside of labeled pick regions
     if window_width:
-        # TODO: Use signal.argrelmax to find multiple picks if needed
-        _, label_pick_sample = labels.max(dim=2)
-        mask = torch.zeros_like(labels, dtype=torch.bool)
-        # Set all pick sampple locations to True
-        for batch_idx in range(labels.shape[0]):
-            for comp_idx in range(labels.shape[1]):
-                pick_sample = label_pick_sample[batch_idx, comp_idx]
-                window_start = max(pick_sample - window_width, 0)
-                window_end = min(pick_sample + window_width, labels.shape[2])
-                mask[
-                    batch_idx,
-                    comp_idx,
-                    window_start:window_end,
-                ] = True
-
+        idx = torch.arange(labels.shape[2])
+        start = (label_pick_sample - window_width).clamp(min=0)[..., None]
+        end = (label_pick_sample + window_width).clamp(max=labels.shape[2])[..., None]
+        mask = (idx >= start) & (idx < end)
         predictions_masked = predictions * mask
     else:
         predictions_masked = predictions

@@ -13,6 +13,8 @@ from pytorch_lightning import Callback, LightningModule, Trainer
 from pytorch_lightning.loggers import MLFlowLogger
 from torch import Tensor
 import seisbench.models as sbm
+import copy
+
 
 from metrics.evaluation_metrics import (
     DetectionMetrics,
@@ -59,7 +61,7 @@ class CollectedStats:
 
 
 class BestModel(NamedTuple):
-    model: SeisBenchLit
+    state: dict
     loss: float
 
 
@@ -98,16 +100,13 @@ class EvaluationMetrics(Callback):
 
     def on_train_end(self, trainer: Trainer, pl_module: SeisBenchLit) -> None:
         if self.best_model:
+            pl_module.model.load_state_dict(self.best_model.state)
             with TemporaryDirectory() as tmpdir:
-                model = self.best_model.model
-
                 model_dir = Path(tmpdir) / "best_model"
                 model_dir.mkdir()
-                model.save_model(model_dir / model.model_name)
-                self.experiment.log_artifact(
-                    self.mlflow_logger.run_id,
-                    model_dir,
-                )
+                pl_module.save_model(model_dir / pl_module.model_name)
+                self.experiment.log_artifact(self.mlflow_logger.run_id, model_dir)
+            self.mlflow_logger.log_metrics({"best_val_loss": self.best_model.loss})
 
     def on_validation_start(
         self,
@@ -204,23 +203,15 @@ class EvaluationMetrics(Callback):
         self.store_model(trainer, pl_module)
 
     def store_model(self, trainer: Trainer, pl_module: SeisBenchLit) -> None:
-        callback_metrics = trainer.callback_metrics
-
-        if self.best_model is None:
+        current_loss = float(trainer.callback_metrics["val_loss"])
+        if self.best_model is None or current_loss < self.best_model.loss:
+            if self.best_model is not None:
+                print(
+                    f"New best model found with val_loss: {current_loss:.4f} "
+                    f"(previous: {self.best_model.loss:.4f})"
+                )
             self.best_model = BestModel(
-                model=pl_module,
-                loss=callback_metrics["val_loss"].item(),
-            )
-            return
-
-        current_loss = float(callback_metrics["val_loss"])
-        if current_loss < self.best_model.loss:
-            print(
-                f"New best model found with val_loss: {current_loss:.4f} "
-                f"(previous: {self.best_model.loss:.4f})"
-            )
-            self.best_model = BestModel(
-                model=pl_module,
+                state=copy.deepcopy(pl_module.model.state_dict()),
                 loss=current_loss,
             )
 

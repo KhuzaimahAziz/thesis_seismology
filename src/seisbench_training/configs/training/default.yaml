@@ -6,3 +6,5 @@ num_workers: 16
 baseline_model_name: "original"
 seed: 42
 pretrained_model_name: ""
+weight_decay: 0.0
+run_purpose: "hyperparameter_screening"
