@@ -8,6 +8,11 @@ defaults:
 experiment_name: "seismic_training"
 
 
-
+evaluation:
+  tolerance_s: 0.5                  
+  test_tolerances_s: [0.1, 0.2, 0.5] 
+  min_peak_distance_s: 1.0         
+  min_peak_height: 0.05            
+  test_at_end: true             
 
   

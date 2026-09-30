@@ -6,6 +6,27 @@ import numpy as np
 import torch
 from matplotlib import pyplot as plt
 from sklearn import metrics
+from scipy.signal import find_peaks
+
+PLOT_STYLE = {
+    "figure.dpi": 150,
+    "font.size": 10,
+    "axes.titlesize": 11,
+    "axes.titleweight": "bold",
+    "axes.labelsize": 10,
+    "legend.fontsize": 8.5,
+    "legend.frameon": False,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
+    "axes.grid": True,
+    "grid.alpha": 0.25,
+    "grid.linewidth": 0.6,
+    "lines.linewidth": 2,
+}
+C_BLUE, C_ORANGE, C_GREEN, C_YELLOW = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
+C_GLOBAL = "#6f6f6f"
+TOLERANCE_S = 0.1
+
 
 if TYPE_CHECKING:
     from matplotlib.figure import Figure
@@ -168,56 +189,42 @@ def plot_histogram(
     title: str = "",
     show_figure: bool = False,
 ) -> Figure | None:
-    fig = plt.figure()
-    ax = fig.gca()
-    offsets = stats.offset_samples / sampling_rate
+    sr = sampling_rate
+    offsets = stats.offset_samples / sr
     offsets = offsets[~np.isnan(offsets)]
-    ax.hist(
-        offsets,
-        bins=100,
-        range=(-time_window_limit, time_window_limit),
-        alpha=0.7,
-        color="blue",
-    )
-    ax.set_xlabel("Pick time difference (seconds)")
-    ax.set_ylabel("Count")
-    ax.grid(alpha=0.3)
-
-    # percentage
     fraction_outside_window = (
         np.sum(np.abs(offsets) > time_window_limit) / offsets.size * 100.0
     )
 
-    ax.axvline(
-        stats.mean_difference / sampling_rate,
-        color="green",
-        linestyle="dashed",
-        label="Mean difference",
-    )
-    ax.axvline(
-        stats.median_difference / sampling_rate,
-        color="orange",
-        linestyle="dashed",
-        label="Median difference",
-    )
-    ax.set_title(title)
-
-    sr = sampling_rate
-    ax.text(
-        0.02,
-        0.98,
-        f"Median difference: {stats.median_difference / sr:.3f} s\n"
-        f"Mean difference: {stats.mean_difference / sr:.3f} s\n"
-        f"MAE: {stats.mean_abs_error / sr:.3f} s\n"
-        f"RMS error: {stats.rms_error / sr:.3f} s\n"
-        f"Total picks: {offsets.size}\n"
-        f"Outside ±{time_window_limit}s: {fraction_outside_window:.0f}%",
-        transform=ax.transAxes,
-        verticalalignment="top",
-        fontsize="small",
-    )
-    ax.legend(loc="upper right")
-    ax.set_xlim(-time_window_limit, time_window_limit)
+    with plt.rc_context(PLOT_STYLE):
+        fig, ax = plt.subplots(figsize=(8, 4.5), layout="constrained")
+        ax.axvspan(-TOLERANCE_S, TOLERANCE_S, color="0.93", lw=0, zorder=0,
+                   label=f"±{TOLERANCE_S:g} s")
+        kw = dict(bins=100, range=(-time_window_limit, time_window_limit), color=C_BLUE)
+        ax.hist(offsets, histtype="stepfilled", alpha=0.25, **kw)
+        ax.hist(offsets, histtype="step", linewidth=1.6, **kw)
+        ax.axvline(stats.mean_difference / sr, color=C_ORANGE, linestyle="--",
+                   linewidth=1.5, label="Mean difference")
+        ax.axvline(stats.median_difference / sr, color=C_GREEN, linestyle="--",
+                   linewidth=1.5, label="Median difference")
+        ax.text(
+            0.02, 0.97,
+            f"{'Median':<9}{stats.median_difference / sr:+.3f} s\n"
+            f"{'Mean':<9}{stats.mean_difference / sr:+.3f} s\n"
+            f"{'MAE':<9}{stats.mean_abs_error / sr:.3f} s\n"
+            f"{'RMS':<9}{stats.rms_error / sr:.3f} s\n"
+            f"{'Picks':<9}{offsets.size}\n"
+            f"{'Outside':<9}{fraction_outside_window:.0f}% (>±{time_window_limit:g} s)",
+            transform=ax.transAxes, va="top", fontsize=8.5, family="monospace",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="white", edgecolor="0.85"),
+        )
+        ax.set(
+            title=title,
+            xlabel=r"Pick time difference $t_\mathrm{pred} - t_\mathrm{true}$ (s)",
+            ylabel="Count",
+            xlim=(-time_window_limit, time_window_limit),
+        )
+        ax.legend(loc="upper right")
 
     if show_figure:
         plt.show()
@@ -230,39 +237,38 @@ def plot_comparison(
     time_window_limit: float = 1.0,
 ) -> Figure:
     """Overlay residual histogram, F1-vs-threshold and ROC for several models."""
-    fig, (ax_h, ax_f1, ax_roc) = plt.subplots(1, 3, figsize=(16, 5))
-    for name, (stats, detection) in models.items():
-        offsets = stats.offset_samples / sampling_rate
-        offsets = offsets[~np.isnan(offsets)]
-        ax_h.hist(
-            offsets,
-            bins=100,
-            range=(-time_window_limit, time_window_limit),
-            histtype="step",  # outlines, so overlapping models stay visible
-            linewidth=1.5,
-            label=f"{name} (MAE {stats.mean_abs_error / sampling_rate:.3f} s)",
-        )
-        ax_f1.plot(
-            [d.threshold for d in detection],
-            [d.f1_score for d in detection],
-            linewidth=2,
-            label=f"{name} (max F1 {get_f1_optimal_metrics(detection).f1_score:.3f})",
-        )
-        fpr, tpr = stats.roc_curve
-        ax_roc.plot(fpr, tpr, linewidth=2, label=f"{name} (AUC {stats.auc:.3f})")
+    palette = iter([C_BLUE, C_ORANGE, C_GREEN, C_YELLOW])
+    colors = {n: C_GLOBAL if n.lower().startswith("global") else next(palette) for n in models}
 
-    ax_h.set_xlabel("Pick time difference (s)")
-    ax_h.set_ylabel("Count")
-    ax_f1.set_xlabel("Threshold")
-    ax_f1.set_ylabel("F1 score")
-    ax_roc.plot([0, 1], [0, 1], "--", color="gray", linewidth=1)
-    ax_roc.set_xlabel("False Positive Rate")
-    ax_roc.set_ylabel("True Positive Rate")
-    for ax in (ax_h, ax_f1, ax_roc):
-        ax.grid(alpha=0.3)
-        ax.legend(fontsize="small")
-    fig.suptitle(title)
-    fig.tight_layout()
+    with plt.rc_context(PLOT_STYLE):
+        fig, (ax_h, ax_f1, ax_roc) = plt.subplots(1, 3, figsize=(16, 5), layout="constrained")
+        ax_h.axvspan(-TOLERANCE_S, TOLERANCE_S, color="0.93", lw=0, zorder=0,
+                     label=f"±{TOLERANCE_S:g} s")
+        for name, (stats, detection) in models.items():
+            c = colors[name]
+            offsets = stats.offset_samples / sampling_rate
+            offsets = offsets[~np.isnan(offsets)]
+            kw = dict(bins=100, range=(-time_window_limit, time_window_limit), color=c)
+            ax_h.hist(offsets, histtype="stepfilled", alpha=0.15, **kw)
+            ax_h.hist(offsets, histtype="step", linewidth=1.6,
+                      label=f"{name} (MAE {stats.mean_abs_error / sampling_rate:.3f} s)", **kw)
+            ax_f1.plot([d.threshold for d in detection], [d.f1_score for d in detection],
+                       color=c, label=name)
+            fpr, tpr = stats.roc_curve
+            ax_roc.plot(fpr, tpr, color=c, label=f"{name} (AUC {stats.auc:.3f})")
+
+        ax_roc.plot([0, 1], [0, 1], linestyle=":", color="0.6", linewidth=1)
+        ax_h.set(title="Pick time difference",
+                 xlabel=r"$t_\mathrm{pred} - t_\mathrm{true}$ (s)", ylabel="Count",
+                 xlim=(-time_window_limit, time_window_limit))
+        ax_f1.set(title="F1 vs threshold", xlabel="Threshold", ylabel="F1 score", xlim=(0, 1))
+        ax_roc.set(title="ROC", xlabel="False positive rate", ylabel="True positive rate",
+                   xlim=(0, 1), ylim=(0, 1.01))
+        ax_roc.set_aspect("equal")
+        ax_h.legend(loc="upper left")
+        ax_f1.legend(loc="lower left")
+        ax_roc.legend(loc="lower right")
+        fig.suptitle(title, fontsize=12, fontweight="bold")
     return fig
 
 def calculate_precision_recall_f1(
@@ -328,42 +334,13 @@ def plot_precision_recall_f1(detection_metrics: list[DetectionMetrics], title: s
         fig: Matplotlib figure object for further use.
     """
     thresholds = [d.threshold for d in detection_metrics]
-    precision = [d.precision for d in detection_metrics]
-    recall = [d.recall for d in detection_metrics]
-    f1_score = [d.f1_score for d in detection_metrics]
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    ax.plot(
-        thresholds,
-        precision,
-        label="Precision",
-        linewidth=2,
-        color="blue",
-    )
-    ax.plot(
-        thresholds,
-        recall,
-        label="Recall",
-        linewidth=2,
-        color="orange",
-    )
-    ax.plot(
-        thresholds,
-        f1_score,
-        label="F1 Score",
-        linewidth=2,
-        color="green",
-    )
-
-    ax.grid(alpha=0.3)
-
-    ax.set_xlabel("Threshold")
-    ax.set_ylabel("Metric Score")
-    ax.set_title(title)
-    ax.legend(loc="lower left")
-    fig.tight_layout()
-
+    with plt.rc_context(PLOT_STYLE):
+        fig, ax = plt.subplots(figsize=(8, 5), layout="constrained")
+        ax.plot(thresholds, [d.precision for d in detection_metrics], color=C_BLUE, label="Precision")
+        ax.plot(thresholds, [d.recall for d in detection_metrics], color=C_ORANGE, label="Recall")
+        ax.plot(thresholds, [d.f1_score for d in detection_metrics], color=C_GREEN, label="F1 score")
+        ax.set(title=title, xlabel="Threshold", ylabel="Metric score", xlim=(0, 1), ylim=(0, 1.02))
+        ax.legend(loc="lower left")
     return fig
 
 
@@ -371,23 +348,58 @@ def plot_roc_curve(
     stats: PickStats,
     title: str,
 ) -> Figure:
-    fig, ax = plt.subplots(figsize=(10, 6))
     fpr, tpr = stats.roc_curve
-    auc = stats.auc
-
-    ax.plot(fpr, tpr, linewidth=3, label=f"AUC = {auc:.3f}")
-
-    ax.plot([0, 1], [0, 1], "--", color="gray", linewidth=1)
-
-    ax.set_title(title)
-    ax.set_xlabel("False Positive Rate")
-    ax.set_ylabel("True Positive Rate")
-
-    ax.grid(alpha=0.3)
-    ax.set_xlim(0.0, 1.0)
-    ax.set_ylim(0.0, 1.0)
-    ax.set_aspect("equal")
-    ax.legend(loc="lower right")
-
-    fig.tight_layout()
+    with plt.rc_context(PLOT_STYLE):
+        fig, ax = plt.subplots(figsize=(6, 6), layout="constrained")
+        ax.fill_between(fpr, tpr, color=C_BLUE, alpha=0.1)
+        ax.plot(fpr, tpr, color=C_BLUE, label=f"AUC = {stats.auc:.3f}")
+        ax.plot([0, 1], [0, 1], linestyle=":", color="0.6", linewidth=1)
+        ax.set(title=title, xlabel="False positive rate", ylabel="True positive rate",
+               xlim=(0, 1), ylim=(0, 1.01))
+        ax.set_aspect("equal")
+        ax.legend(loc="lower right")
     return fig
+
+def extract_picks(
+    predictions: torch.Tensor,
+    labels: torch.Tensor,
+    label_order: ComponentOrder = "PSN",
+    min_height: float = 0.05,
+    min_distance: int = 100,
+    tolerance: int = 50,
+) -> dict[str, PickStats]:
+    pred = predictions.detach().cpu().numpy()
+    lab = labels.detach().cpu().numpy()
+    p_idx, s_idx = ORDER_MAP[label_order]
+    out = {}
+    for phase, c in (("P", p_idx), ("S", s_idx)):
+        pred_s, lab_s, cert, noise = [], [], [], []
+        for i in range(pred.shape[0]):
+            peaks, props = find_peaks(pred[i, c], height=min_height, distance=min_distance)
+            heights = props["peak_heights"]
+            manual, _ = find_peaks(lab[i, c], height=0.5, distance=min_distance)
+            used = np.zeros(peaks.size, dtype=bool)
+            for m in manual:
+                near = np.flatnonzero((np.abs(peaks - m) <= tolerance) & ~used)
+                lab_s.append(m)
+                if near.size:
+                    j = near[np.argmax(heights[near])]
+                    used[j] = True
+                    pred_s.append(peaks[j])
+                    cert.append(heights[j])
+                else:
+                    pred_s.append(np.nan)
+                    cert.append(0.0)
+            noise.extend(heights[~used])
+        out[phase] = PickStats(
+            predicted_samples=np.asarray(pred_s, dtype=float),
+            labeled_samples=np.asarray(lab_s, dtype=float),
+            predicted_certainty=np.asarray(cert, dtype=float),
+            noise_max=np.asarray(noise, dtype=float),
+        )
+    return out
+
+def at_threshold(stats: PickStats, threshold: float) -> PickStats:
+    """Keep only picks whose probability reaches the threshold; the rest count as missed."""
+    keep = stats.predicted_certainty >= threshold
+    return stats._replace(predicted_samples=np.where(keep, stats.predicted_samples, np.nan))

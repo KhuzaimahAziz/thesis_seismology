@@ -13,6 +13,7 @@ from omegaconf import OmegaConf
 from pytorch_lightning.callbacks import ModelCheckpoint, TQDMProgressBar
 from pytorch_lightning.loggers import MLFlowLogger
 from seisbench.util import worker_seeding
+from functools import lru_cache
 from torch.utils.data import DataLoader
 
 from metrics.callbacks import EvaluationMetrics
@@ -32,6 +33,16 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 torch.set_float32_matmul_precision("high")
 
+
+@lru_cache(maxsize=1)
+def load_splits(name: str, component_order: str, sampling_rate: int):
+    DatasetClass = getattr(sbd, name)
+    data = DatasetClass(component_order=component_order, sampling_rate=sampling_rate, cache="full")
+    train, dev, test = data.train_dev_test()
+    train.preload_waveforms(pbar=True)
+    dev.preload_waveforms(pbar=True)
+    test.preload_waveforms(pbar=True)
+    return train, dev, test
 
 @hydra.main(version_base="1.3", config_path="configs", config_name="config")
 def train_seisbench(cfg):
@@ -102,24 +113,10 @@ def train_seisbench(cfg):
           ),
       ]
 
-    try:
-        DatasetClass: Type[sbd.BenchmarkDataset] | None = getattr(sbd, dataset.name)
-    except AttributeError as exc:
-        raise ValueError(f"Unknown dataset: {dataset.name}") from exc
-    if not issubclass(DatasetClass, sbd.BenchmarkDataset):
-        raise ValueError(f"Dataset {dataset.name} is not a BenchmarkDataset subclass")
-
-    data = DatasetClass(
-        component_order=dataset.component_orders,
-        sampling_rate=dataset.sampling_rate,
-        cache="full",
-        # cache="trace",  # 'full' caches the full block
+    train, dev, test = load_splits(
+        dataset.name, dataset.component_orders, dataset.sampling_rate
     )
     log.info("Dataset loaded successfully.")
-    train, dev, test = data.train_dev_test()
-    train.preload_waveforms(pbar=True)
-    dev.preload_waveforms(pbar=True)
-    test.preload_waveforms(pbar=True)
 
     log.info("Setting up generators...")
     train_gen = sbg.GenericGenerator(train)
@@ -140,15 +137,6 @@ def train_seisbench(cfg):
     dev_gen.add_augmentations(eval_augmentations)
     test_gen.add_augmentations(eval_augmentations)
 
-
-    first_dev = dev_gen[0]
-    second_dev = dev_gen[0]
-
-    assert np.array_equal(first_dev["X"], second_dev["X"])
-    assert np.array_equal(first_dev["y"], second_dev["y"])
-
-    log.info("Development generator is deterministic.")
-
     log.info("Preparing data loaders...")
 
     train_loader = DataLoader(
@@ -157,7 +145,8 @@ def train_seisbench(cfg):
         shuffle=True,
         num_workers=cfg.training.num_workers,
         worker_init_fn=worker_seeding,
-        pin_memory=True
+        persistent_workers=True,
+        pin_memory=False
     )
 
     test_loader = DataLoader(
@@ -166,22 +155,24 @@ def train_seisbench(cfg):
         shuffle=True,
         num_workers=cfg.training.num_workers,
         worker_init_fn=worker_seeding,
-        pin_memory=True
+        persistent_workers=True,
+        pin_memory=False
     )
 
     dev_loader = DataLoader(
         dev_gen,
         batch_size=cfg.training.batch_size,
         num_workers=cfg.training.num_workers,
-        pin_memory=True,
+        pin_memory=False,
+        persistent_workers=True,
         worker_init_fn=worker_seeding
     )
 
     model_variant = (
-      f"transfer_{cfg.training.baseline_model_name}"
-      if cfg.training.baseline_model_name
-      else "scratch"
-  )
+        f"transfer_{cfg.training.pretrained_model_name}"
+        if cfg.training.pretrained_model_name
+        else "scratch"
+    )
 
     run_name = (
       f"{model_variant}"
@@ -204,6 +195,7 @@ def train_seisbench(cfg):
           "epochs": int(cfg.training.epochs),
           "baseline_model_name": str(cfg.training.baseline_model_name),
           "dataset": str(cfg.dataset.name),
+          "pretrained_model_name": str(cfg.training.pretrained_model_name)
       }
     )
 
@@ -220,8 +212,13 @@ def train_seisbench(cfg):
 
     callbacks = [
         checkpoint_callback,
-        EvaluationMetrics(mlf_logger, cfg.training.baseline_model_name),
-        TQDMProgressBar(refresh_rate=100)
+        EvaluationMetrics(
+            mlf_logger,
+            cfg.training.baseline_model_name,
+            eval_cfg=cfg.evaluation,
+            test_loader=test_loader,
+        ),
+        TQDMProgressBar(refresh_rate=100),
     ]
 
     log.info(f"Beginning training for {cfg.training.epochs} epochs...")

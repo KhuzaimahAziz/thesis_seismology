@@ -14,6 +14,7 @@ from pytorch_lightning.loggers import MLFlowLogger
 from torch import Tensor
 import seisbench.models as sbm
 import copy
+import pandas as pd
 
 
 from metrics.evaluation_metrics import (
@@ -25,7 +26,9 @@ from metrics.evaluation_metrics import (
     plot_histogram,
     plot_precision_recall_f1,
     plot_roc_curve,
-    plot_comparison
+    plot_comparison,
+    extract_picks,
+    at_threshold,
 )
 from seisbench_training.utils.model_utils import SeisBenchLit
 
@@ -76,7 +79,8 @@ class EvaluationMetrics(Callback):
 
     best_model: BestModel | None = None
 
-    def __init__(self, mlflow: MLFlowLogger, baseline_model_name: str = "original") -> None:
+    def __init__(self, mlflow: MLFlowLogger, baseline_model_name: str = "original",
+                 eval_cfg=None, test_loader=None) -> None:
         self.scores = []
 
         self.stats = CollectedStats()
@@ -89,6 +93,23 @@ class EvaluationMetrics(Callback):
         if baseline_model_name:
             self.baseline = sbm.PhaseNet.from_pretrained(baseline_model_name).eval()
             self.baseline.requires_grad_(False)
+
+        # label-independent evaluation (always set, with or without a global model)
+        self.eval_cfg = eval_cfg
+        self.test_loader = test_loader
+        self.det_stats = CollectedStats()
+        self.det_baseline_stats = CollectedStats()
+        self.det_thresholds: dict[str, float] = {}
+        self.best_det_thresholds: dict[str, float] = {}
+        self.global_det_thresholds: dict[str, float] = {}
+
+    def _pick_kwargs(self, tolerance_s: float) -> dict:
+        c = self.eval_cfg
+        return dict(
+            min_height=float(c.min_peak_height),
+            min_distance=max(1, int(round(c.min_peak_distance_s * SAMPLING_RATE))),
+            tolerance=int(round(tolerance_s * SAMPLING_RATE)),
+        )
 
     def on_fit_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
         self.system_monitor = SystemMetricsMonitor(run_id=self.mlflow_logger.run_id)
@@ -107,6 +128,8 @@ class EvaluationMetrics(Callback):
                 pl_module.save_model(model_dir / pl_module.model_name)
                 self.experiment.log_artifact(self.mlflow_logger.run_id, model_dir)
             self.mlflow_logger.log_metrics({"best_val_loss": self.best_model.loss})
+            if self.eval_cfg is not None and self.eval_cfg.test_at_end and self.test_loader is not None:
+                self.evaluate_test(pl_module)
 
     def on_validation_start(
         self,
@@ -121,56 +144,63 @@ class EvaluationMetrics(Callback):
         trainer: Trainer,
         pl_module: LightningModule,
     ) -> None:
+        run_id = self.mlflow_logger.run_id
+        epoch = trainer.current_epoch
+        local_name = "Local-fine-tuned" if pl_module.pretrained_model_name else "Local-scratch"
+
         for phase in ("P", "S"):
+            # legacy window-based metrics: kept under the old names so screening runs stay comparable
             pick_stats = self.stats.get_stats(phase)
             if not pick_stats.n_samples:
                 print(f"No {phase} picks to log.")
                 continue
-
-            figure_hist = plot_histogram(
-                stats=pick_stats,
-                sampling_rate=SAMPLING_RATE,
-                title=f"{phase}-Pick Differences - Epoch {trainer.current_epoch}",
-            )
-
-            self.experiment.log_figure(
-                self.mlflow_logger.run_id,
-                figure_hist,
-                f"histograms/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
-            )
-            print("Logged histogram for phase", phase)
-
             metric_results = calculate_precision_recall_f1(stats=pick_stats)
-
-            figure_precision_recall_f1 = plot_precision_recall_f1(
-                metric_results,
-                title=f"{phase}-Precision, Recall and F1 Score "
-                f"- Epoch {trainer.current_epoch}",
-            )
-            self.experiment.log_figure(
-                self.mlflow_logger.run_id,
-                figure_precision_recall_f1,
-                f"precision_recall_f1_plots/"
-                f"{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
-            )
-
-            print("Logged Metrics for phase", phase)
-
-            figure_roc = plot_roc_curve(
-                stats=pick_stats,
-                title=f"ROC Curve for {phase}-wave Picks - Epoch {trainer.current_epoch}",
-            )
-            self.experiment.log_figure(
-                self.mlflow_logger.run_id,
-                figure_roc,
-                f"roc_curve_plot/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
-            )
-            print("Logged ROC Curve for phase", phase)
-
             self.mlflow_logger.log_metrics(
                 scalar_metrics(pick_stats, metric_results, phase),
                 step=trainer.global_step,
             )
+
+            # values used for the plots: label-independent if enabled, legacy otherwise
+            plot_stats, plot_results, thr_note = pick_stats, metric_results, ""
+            if self.eval_cfg is not None:
+                det = self.det_stats.get_stats(phase)
+                det_results = calculate_precision_recall_f1(det)
+                best = get_f1_optimal_metrics(det_results)
+                self.det_thresholds[phase] = float(best.threshold)
+                plot_stats = at_threshold(det, best.threshold)
+                plot_results = det_results
+                thr_note = f" (threshold {best.threshold:.2f})"
+                self.mlflow_logger.log_metrics(
+                    scalar_metrics(plot_stats, det_results, f"det_{phase}"),
+                    step=trainer.global_step,
+                )
+
+            self.experiment.log_figure(
+                run_id,
+                plot_histogram(
+                    stats=plot_stats,
+                    sampling_rate=SAMPLING_RATE,
+                    title=f"{phase}-Pick Differences - Epoch {epoch}{thr_note}",
+                ),
+                f"histograms/{phase}-phase/epoch-{epoch:03d}.png",
+            )
+            self.experiment.log_figure(
+                run_id,
+                plot_precision_recall_f1(
+                    plot_results,
+                    title=f"{phase}-Precision, Recall and F1 Score - Epoch {epoch}",
+                ),
+                f"precision_recall_f1_plots/{phase}-phase/epoch-{epoch:03d}.png",
+            )
+            self.experiment.log_figure(
+                run_id,
+                plot_roc_curve(
+                    stats=plot_stats,
+                    title=f"ROC Curve for {phase}-wave Picks - Epoch {epoch}",
+                ),
+                f"roc_curve_plot/{phase}-phase/epoch-{epoch:03d}.png",
+            )
+            print("Logged plots for phase", phase)
 
             if self.baseline is not None:
                 base_stats = self.baseline_stats.get_stats(phase)
@@ -180,27 +210,42 @@ class EvaluationMetrics(Callback):
                     step=trainer.global_step,
                 )
 
-                local_name = (
-                    "Local-fine-tuned" if pl_module.pretrained_model_name else "Local-scratch"
-                )
-                figure_comparison = plot_comparison(
-                    {
-                        "Global/original": (base_stats, base_results),
-                        local_name: (pick_stats, metric_results),
-                    },
-                    title=f"{phase}-phase: {local_name} vs Global - Epoch {trainer.current_epoch}",
-                    sampling_rate=SAMPLING_RATE,
-                )
+                g_plot_stats, g_plot_results = base_stats, base_results
+                if self.eval_cfg is not None:
+                    gdet = self.det_baseline_stats.get_stats(phase)
+                    g_results = calculate_precision_recall_f1(gdet)
+                    gbest = get_f1_optimal_metrics(g_results)
+                    self.global_det_thresholds[phase] = float(gbest.threshold)
+                    g_plot_stats = at_threshold(gdet, gbest.threshold)
+                    g_plot_results = g_results
+                    self.mlflow_logger.log_metrics(
+                        scalar_metrics(g_plot_stats, g_results, f"det_global_{phase}"),
+                        step=trainer.global_step,
+                    )
+
                 self.experiment.log_figure(
-                    self.mlflow_logger.run_id,
-                    figure_comparison,
-                    f"comparison/{phase}-phase/epoch-{trainer.current_epoch:03d}.png",
+                    run_id,
+                    plot_comparison(
+                        {
+                            "Global/original": (g_plot_stats, g_plot_results),
+                            local_name: (plot_stats, plot_results),
+                        },
+                        title=f"{phase}-phase: {local_name} vs Global - Epoch {epoch}",
+                        sampling_rate=SAMPLING_RATE,
+                    ),
+                    f"comparison/{phase}-phase/epoch-{epoch:03d}.png",
                 )
+
         self.stats.clear()
         self.baseline_stats.clear()
+        self.det_stats.clear()
+        self.det_baseline_stats.clear()
         plt.close("all")
 
+        previous_best = self.best_model
         self.store_model(trainer, pl_module)
+        if self.best_model is not previous_best:
+            self.best_det_thresholds = dict(self.det_thresholds)
 
     def store_model(self, trainer: Trainer, pl_module: SeisBenchLit) -> None:
         current_loss = float(trainer.callback_metrics["val_loss"])
@@ -233,6 +278,7 @@ class EvaluationMetrics(Callback):
         # torch.save(label_data, "example_labels.pt")
         # torch.save(waveform_data, "example_waveform.pt")
         # torch.save(label_predicted, "example_predictions.pt")
+
         stats = calculate_pick_differences(
             label_predicted.cpu(),
             label_data.cpu(),
@@ -240,6 +286,11 @@ class EvaluationMetrics(Callback):
             label_order=pl_module.label_order,
         )
         self.stats.add(stats)
+        if self.eval_cfg is not None:                                           
+            self.det_stats.add(extract_picks(                                   
+                label_predicted.cpu(), label_data.cpu(), pl_module.label_order,
+                **self._pick_kwargs(self.eval_cfg.tolerance_s)))
+            
         if self.baseline is not None:
             X = batch["X"]
             self.baseline.to(X.device)
@@ -249,6 +300,101 @@ class EvaluationMetrics(Callback):
             self.baseline_stats.add(
                 calculate_pick_differences(
                     pred[:, order].cpu(), label_data.cpu(), window_width=200, label_order=pl_module.label_order))
+            if self.eval_cfg is not None:                                       
+                self.det_baseline_stats.add(extract_picks(                      
+                    pred[:, order].cpu(), label_data.cpu(), pl_module.label_order,
+                    **self._pick_kwargs(self.eval_cfg.tolerance_s)))
+
+    @torch.no_grad()
+    def evaluate_test(self, pl_module: SeisBenchLit) -> None:
+        tolerances = [float(t) for t in self.eval_cfg.test_tolerances_s]
+        device = pl_module.device
+        pl_module.model.eval()
+        local = {t: CollectedStats() for t in tolerances}
+        glob = {t: CollectedStats() for t in tolerances}
+
+        for batch in self.test_loader:
+            X, y = batch["X"].to(device), batch["y"]
+            pred = pl_module.model(pl_module.model.annotate_batch_pre(X, {})).cpu()
+            base_pred = None
+            if self.baseline is not None:
+                self.baseline.to(device)
+                order = [self.baseline.labels.index(c) for c in pl_module.label_order]
+                base_pred = self.baseline(self.baseline.annotate_batch_pre(X, {}))[:, order].cpu()
+            for t in tolerances:
+                kw = self._pick_kwargs(t)
+                local[t].add(extract_picks(pred, y, pl_module.label_order, **kw))
+                if base_pred is not None:
+                    glob[t].add(extract_picks(base_pred, y, pl_module.label_order, **kw))
+
+        local_name = "Local-fine-tuned" if pl_module.pretrained_model_name else "Local-scratch"
+        run_id = self.mlflow_logger.run_id
+        sr = SAMPLING_RATE
+        rows = []
+        for t in tolerances:
+            for phase in ("P", "S"):
+                folder = f"final_evaluation/tolerance_{t:g}s/{phase}_phase"
+                models = {local_name: (local[t], "local", self.best_det_thresholds.get(phase, 0.5))}
+                if self.baseline is not None:
+                    models["Global/original"] = (glob[t], "global", self.global_det_thresholds.get(phase, 0.5))
+                comparison = {}
+                for name, (collected, slug, thr) in models.items():
+                    stats = collected.get_stats(phase)
+                    curve = calculate_precision_recall_f1(stats)
+                    at_thr = calculate_precision_recall_f1(stats, thresholds=np.array([thr]))[0]
+                    picked = at_threshold(stats, thr)
+                    row = {
+                        "model": name,
+                        "phase": phase,
+                        "tolerance_s": t,
+                        "threshold": float(thr),
+                        "precision": float(at_thr.precision),
+                        "recall": float(at_thr.recall),
+                        "f1": float(at_thr.f1_score),
+                        "mae_s": picked.mean_abs_error / sr,
+                        "median_s": picked.median_difference / sr,
+                        "rms_s": picked.rms_error / sr,
+                        "n_manual_picks": int(stats.labeled_samples.size),
+                        "n_false_picks": int((stats.noise_max >= thr).sum()),
+                    }
+                    rows.append(row)
+                    self.mlflow_logger.log_metrics({
+                        f"test_{slug}_{phase}_tol{t:g}s_{k}": v
+                        for k, v in row.items() if k not in ("model", "phase", "tolerance_s")
+                    })
+                    self.experiment.log_figure(
+                        run_id,
+                        plot_precision_recall_f1(curve, title=f"{name}: {phase}-phase, test set, ±{t:g} s"),
+                        f"{folder}/{slug}_model_precision_recall_f1.png",
+                    )
+                    self.experiment.log_figure(
+                        run_id,
+                        plot_histogram(
+                            picked,
+                            sampling_rate=sr,
+                            title=f"{name}: {phase}-phase residuals, test set, ±{t:g} s (threshold {thr:.2f})",
+                        ),
+                        f"{folder}/{slug}_model_residual_histogram.png",
+                    )
+                    comparison[name] = (picked, curve)
+                if len(comparison) > 1:
+                    self.experiment.log_figure(
+                        run_id,
+                        plot_comparison(
+                            comparison,
+                            sampling_rate=sr,
+                            title=f"{phase}-phase: {local_name} vs Global, test set, ±{t:g} s",
+                        ),
+                        f"{folder}/comparison_local_vs_global.png",
+                    )
+                plt.close("all")
+
+        self.experiment.log_text(
+            run_id,
+            pd.DataFrame(rows).to_csv(index=False),
+            "final_evaluation/summary_all_models.csv",
+        )
+
 
 def scalar_metrics(
     stats: PickStats, detection: list[DetectionMetrics], prefix: str
@@ -266,3 +412,5 @@ def scalar_metrics(
         f"{prefix}_optimal_threshold": best.threshold,
         f"{prefix}_auc": stats.auc,
     }
+
+
